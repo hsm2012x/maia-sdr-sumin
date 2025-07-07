@@ -23,7 +23,7 @@ from .pluto_platform import PlutoPlatform
 from .register import Access, Field, Registers, Register, RegisterMap
 from .recorder import Recorder16IQ, RecorderMode
 from .spectrometer import Spectrometer
-
+from .dds import DDS
 # IP core version
 _version = '0.6.2'
 
@@ -224,6 +224,10 @@ class MaiaSDR(Elaboratable):
         self.im_in = Signal(self.iq_in_width)
         self.interrupt_out = Signal()
 
+        self.dds = DDS() 
+        self.tx_re_out = Signal(12)
+        self.tx_im_out = Signal(12)
+        self.tx_valid_out = Signal()
     def ports(self):
         return (
             self.axi4lite.axi.ports()
@@ -240,6 +244,10 @@ class MaiaSDR(Elaboratable):
                 self.sync.rst,
                 self.clk2x.clk,
                 self.clk3x.clk,
+
+                    self.tx_re_out,
+                    self.tx_im_out,
+                    self.tx_valid_out,
             ]
         )
 
@@ -449,6 +457,17 @@ class MaiaSDR(Elaboratable):
             self.interrupt_out.eq(interrupts_reg.interrupt),
             interrupts_reg['spectrometer'].eq(sync_spectrometer_interrupt.o),
             interrupts_reg['recorder'].eq(self.recorder.finished),
+        ]
+
+        # elaborate 메소드 안
+        m.submodules.dds = DomainRenamer("sync")(self.dds)
+
+        m.d.comb += [
+
+            # DDS 모듈의 출력을 MaiaSDR의 최상위 포트로 연결
+            self.tx_re_out.eq(self.dds.dac_data_i),
+            self.tx_im_out.eq(self.dds.dac_data_q),
+            self.tx_valid_out.eq(self.dds.dac_valid),
         ]
 
         return m
