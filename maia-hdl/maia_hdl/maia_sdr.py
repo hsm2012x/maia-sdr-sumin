@@ -125,7 +125,7 @@ class MaiaSDR(Elaboratable):
                         Field('loopback_enable',
                               Access.RW,
                               1,
-                              0),
+                              1),
                     ]),
                 0b001: Register(
                     'ddc_coeff_addr',
@@ -475,35 +475,43 @@ class MaiaSDR(Elaboratable):
             # I와 Q 데이터를 묶어서 FIFO에 저장
             loopback_fifo.w_data.eq(Cat(rxiq_cdc.re_out, rxiq_cdc.im_out))
         ]
-        # 3. 루프백 제어 신호
+         # 2. 루프백 제어 신호
         loopback_enabled = self.sdr_registers['spectrometer']['loopback_enable']
-        m.d.comb += loopback_fifo.r_en.eq(loopback_enabled & self.tx_ready_in & loopback_fifo.r_rdy)
 
-    
+        # 3. FIFO 읽기 제어 (기존과 동일)
+        m.d.comb += loopback_fifo.r_en.eq(loopback_enabled & self.tx_ready_in & loopback_fifo.r_rdy)
+        # 4. MUX 로직 (데이터 소스 선택)
+        # 파이프라이닝을 위해 MUX 출력을 저장할 중간 신호(레지스터)를 선언합니다.
+        mux_re_out = Signal.like(self.tx_re_out)
+        mux_im_out = Signal.like(self.tx_im_out)
         
         with m.If(loopback_enabled):
-            # 루프백 활성화: FIFO의 출력을 TX 포트로 연결
-            shift = 16 - self.iq_in_width  # 4
-            # FIFO에서 읽은 24비트 데이터를 다시 12비트 I/Q로 분리
+            # 루프백 활성화: FIFO 출력을 중간 신호로 선택
+            shift = 16 - self.iq_in_width
             fifo_re_out = Signal(12)
             fifo_im_out = Signal(12)
             m.d.comb += [
                 fifo_re_out.eq(loopback_fifo.r_data[:12]),
                 fifo_im_out.eq(loopback_fifo.r_data[12:]),
             ]
-            
             m.d.sync += [
-                # 데이터 폭을 맞추기 위해 MSB 정렬 (Left-shift)
-                self.tx_re_out.eq(fifo_re_out << shift),
-                self.tx_im_out.eq(fifo_im_out << shift),
+                mux_re_out.eq(fifo_re_out << shift),
+                mux_im_out.eq(fifo_im_out << shift),
             ]
         with m.Else():
-            # 루프백 비활성화: DDS 출력을 TX 포트로 연결 (향후 DDS 구현 시)
-            # 현재는 DDS가 없으므로 0으로 출력
+            # 루프백 비활성화: DDS 또는 0을 중간 신호로 선택
+            # (향후 DDS가 추가되면 이 부분에 DDS 출력을 연결합니다.)
             m.d.sync += [
-                self.tx_re_out.eq(0),
-                self.tx_im_out.eq(0),
+                mux_re_out.eq(0),
+                mux_im_out.eq(0),
             ]
+
+        # 5. 최종 출력단 (파이프라인의 마지막 단계)
+        # MUX를 통과한 값을 한 클럭 사이클 후에 최종 출력 포트로 내보냅니다.
+        m.d.sync += [
+            self.tx_re_out.eq(mux_re_out),
+            self.tx_im_out.eq(mux_im_out),
+        ]
 
         
         return m
