@@ -478,15 +478,18 @@ class MaiaSDR(Elaboratable):
          # 2. 루프백 제어 신호
         loopback_enabled = self.sdr_registers['spectrometer']['loopback_enable']
 
-        # 3. FIFO 읽기 제어 (기존과 동일)
-        m.d.comb += loopback_fifo.r_en.eq(loopback_enabled & self.tx_ready_in & loopback_fifo.r_rdy)
-        # 4. MUX 로직 (데이터 소스 선택)
-        # 파이프라이닝을 위해 MUX 출력을 저장할 중간 신호(레지스터)를 선언합니다.
+        fifo_read_enable = Signal()
+        m.d.sync += fifo_read_enable.eq(
+            loopback_enabled & self.tx_ready_in & loopback_fifo.r_rdy
+        )
+        # 레지스터에 저장된 제어 신호를 FIFO의 읽기 허용 포트로 연결합니다.
+        m.d.comb += loopback_fifo.r_en.eq(fifo_read_enable)
+
+        # 4. 데이터 경로 파이프라이닝 (기존과 동일)
         mux_re_out = Signal.like(self.tx_re_out)
         mux_im_out = Signal.like(self.tx_im_out)
         
         with m.If(loopback_enabled):
-            # 루프백 활성화: FIFO 출력을 중간 신호로 선택
             shift = 16 - self.iq_in_width
             fifo_re_out = Signal(12)
             fifo_im_out = Signal(12)
@@ -494,20 +497,16 @@ class MaiaSDR(Elaboratable):
                 fifo_re_out.eq(loopback_fifo.r_data[:12]),
                 fifo_im_out.eq(loopback_fifo.r_data[12:]),
             ]
+            # 중간 레지스터 (파이프라인 스테이지 1)
             m.d.sync += [
                 mux_re_out.eq(fifo_re_out << shift),
                 mux_im_out.eq(fifo_im_out << shift),
             ]
         with m.Else():
-            # 루프백 비활성화: DDS 또는 0을 중간 신호로 선택
-            # (향후 DDS가 추가되면 이 부분에 DDS 출력을 연결합니다.)
-            m.d.sync += [
-                mux_re_out.eq(0),
-                mux_im_out.eq(0),
-            ]
+            # ... (DDS 또는 0 연결)
+            m.d.sync += [ mux_re_out.eq(0), mux_im_out.eq(0) ]
 
-        # 5. 최종 출력단 (파이프라인의 마지막 단계)
-        # MUX를 통과한 값을 한 클럭 사이클 후에 최종 출력 포트로 내보냅니다.
+        # 최종 출력 레지스터 (파이프라인 스테이지 2)
         m.d.sync += [
             self.tx_re_out.eq(mux_re_out),
             self.tx_im_out.eq(mux_im_out),
