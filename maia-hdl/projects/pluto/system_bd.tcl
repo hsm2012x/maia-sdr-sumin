@@ -197,12 +197,15 @@ ad_ip_parameter axi_ad9361 CONFIG.ADC_INIT_DELAY 21
 # parameters to reduce size
 ad_ip_parameter axi_ad9361 CONFIG.TDD_DISABLE 1
 ad_ip_parameter axi_ad9361 CONFIG.DAC_DDS_DISABLE 1
-	
+
+# my add
+ad_ip_parameter axi_ad9361 CONFIG.DAC_USERPORTS_DISABLE 0
+ad_ip_parameter axi_ad9361 CONFIG.DAC_USERPORTS_DISABLE 0	
 if {![info exists maia_iio]} {
-	ad_ip_parameter axi_ad9361 CONFIG.ADC_USERPORTS_DISABLE 1
+	ad_ip_parameter axi_ad9361 CONFIG.ADC_USERPORTS_DISABLE 0
 	ad_ip_parameter axi_ad9361 CONFIG.ADC_DCFILTER_DISABLE 1
 	ad_ip_parameter axi_ad9361 CONFIG.ADC_IQCORRECTION_DISABLE 1
-	ad_ip_parameter axi_ad9361 CONFIG.DAC_USERPORTS_DISABLE 1
+	ad_ip_parameter axi_ad9361 CONFIG.DAC_USERPORTS_DISABLE 0
 	ad_ip_parameter axi_ad9361 CONFIG.DAC_IQCORRECTION_DISABLE 1
 }
 # Maia SDR core
@@ -265,9 +268,15 @@ ad_connect  sys_cpu_reset maia_sdr/s_axi_lite_rst
 ad_connect  maia_sdr_clk/clk_out1 maia_sdr/clk
 ad_connect  maia_sdr_clk/clk_out2 maia_sdr/clk2x_clk
 ad_connect  maia_sdr_clk/clk_out3 maia_sdr/clk3x_clk
+ad_connect maia_sdr/tx_re_out   axi_ad9361/dac_data_i0
+ad_connect maia_sdr/tx_im_out   axi_ad9361/dac_data_q0
+
+ad_connect axi_ad9361/dac_valid_i0 maia_sdr/tx_ready_in
+#ad_connect axi_ad9361/dac_valid_i1 GND
 
 ad_connect  sys_cpu_clk maia_sdr_clk/clk_in1
 ad_connect  sys_cpu_reset maia_sdr_clk/reset
+
 
 if {[info exists maia_iio]} {
 

@@ -23,6 +23,7 @@ from .pluto_platform import PlutoPlatform
 from .register import Access, Field, Registers, Register, RegisterMap
 from .recorder import Recorder16IQ, RecorderMode
 from .spectrometer import Spectrometer
+from amaranth.lib.fifo import SyncFIFO
 
 # IP core version
 _version = '0.6.2'
@@ -118,6 +119,10 @@ class MaiaSDR(Elaboratable):
                               len(self.spectrometer.last_buffer),
                               0),
                         Field('peak_detect',
+                              Access.RW,
+                              1,
+                              0),
+                        Field('loopback_enable',
                               Access.RW,
                               1,
                               0),
@@ -224,6 +229,12 @@ class MaiaSDR(Elaboratable):
         self.im_in = Signal(self.iq_in_width)
         self.interrupt_out = Signal()
 
+
+        self.tx_re_out = Signal(12)
+        self.tx_im_out = Signal(12)
+        self.tx_ready_in = Signal()
+
+
     def ports(self):
         return (
             self.axi4lite.axi.ports()
@@ -240,6 +251,10 @@ class MaiaSDR(Elaboratable):
                 self.sync.rst,
                 self.clk2x.clk,
                 self.clk3x.clk,
+
+                self.tx_re_out,
+                self.tx_im_out,
+                self.tx_ready_in,
             ]
         )
 
@@ -451,6 +466,46 @@ class MaiaSDR(Elaboratable):
             interrupts_reg['recorder'].eq(self.recorder.finished),
         ]
 
+        m.submodules.loopback_fifo = loopback_fifo = SyncFIFO(
+        width=24, depth=16) # depth는 16 정도로 충분합니다.
+        # 2. 수신 데이터를 FIFO에 쓰기 (Write)
+        m.d.comb += [
+            # rxiq_cdc에서 유효한 샘플이 나올 때마다 FIFO에 쓴다.
+            loopback_fifo.w_en.eq(rxiq_cdc.strobe_out),
+            # I와 Q 데이터를 묶어서 FIFO에 저장
+            loopback_fifo.w_data.eq(Cat(rxiq_cdc.re_out, rxiq_cdc.im_out))
+        ]
+        # 3. 루프백 제어 신호
+        loopback_enabled = self.sdr_registers['spectrometer']['loopback_enable']
+        m.d.comb += loopback_fifo.r_en.eq(loopback_enabled & self.tx_ready_in & loopback_fifo.r_rdy)
+
+    
+        
+        with m.If(loopback_enabled):
+            # 루프백 활성화: FIFO의 출력을 TX 포트로 연결
+            shift = 16 - self.iq_in_width  # 4
+            # FIFO에서 읽은 24비트 데이터를 다시 12비트 I/Q로 분리
+            fifo_re_out = Signal(12)
+            fifo_im_out = Signal(12)
+            m.d.comb += [
+                fifo_re_out.eq(loopback_fifo.r_data[:12]),
+                fifo_im_out.eq(loopback_fifo.r_data[12:]),
+            ]
+            
+            m.d.sync += [
+                # 데이터 폭을 맞추기 위해 MSB 정렬 (Left-shift)
+                self.tx_re_out.eq(fifo_re_out << shift),
+                self.tx_im_out.eq(fifo_im_out << shift),
+            ]
+        with m.Else():
+            # 루프백 비활성화: DDS 출력을 TX 포트로 연결 (향후 DDS 구현 시)
+            # 현재는 DDS가 없으므로 0으로 출력
+            m.d.sync += [
+                self.tx_re_out.eq(0),
+                self.tx_im_out.eq(0),
+            ]
+
+        
         return m
 
 
