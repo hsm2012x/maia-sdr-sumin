@@ -193,6 +193,11 @@ ad_ip_parameter axi_ad9361 CONFIG.ID 0
 ad_ip_parameter axi_ad9361 CONFIG.CMOS_OR_LVDS_N 1
 ad_ip_parameter axi_ad9361 CONFIG.MODE_1R1T 1
 ad_ip_parameter axi_ad9361 CONFIG.ADC_INIT_DELAY 21
+# 1. DAC의 주 데이터 경로(DMA/AXI-Stream)를 비활성화합니다.
+ad_ip_parameter axi_ad9361 CONFIG.DAC_DATAPATH_DISABLE 1
+
+# 2. 병렬 DAC 포트 블록을 활성화합니다. (이것이 0 이어야 포트가 보입니다)
+ad_ip_parameter axi_ad9361 CONFIG.DAC_USERPORTS_DISABLE 0
 
 # parameters to reduce size
 ad_ip_parameter axi_ad9361 CONFIG.TDD_DISABLE 1
@@ -202,7 +207,7 @@ if {![info exists maia_iio]} {
 	ad_ip_parameter axi_ad9361 CONFIG.ADC_USERPORTS_DISABLE 1
 	ad_ip_parameter axi_ad9361 CONFIG.ADC_DCFILTER_DISABLE 1
 	ad_ip_parameter axi_ad9361 CONFIG.ADC_IQCORRECTION_DISABLE 1
-	ad_ip_parameter axi_ad9361 CONFIG.DAC_USERPORTS_DISABLE 1
+	#ad_ip_parameter axi_ad9361 CONFIG.DAC_USERPORTS_DISABLE 0
 	ad_ip_parameter axi_ad9361 CONFIG.DAC_IQCORRECTION_DISABLE 1
 }
 # Maia SDR core
@@ -302,14 +307,15 @@ if {[info exists maia_iio]} {
 
 	ad_connect  axi_ad9361/l_clk tx_upack/clk
 	ad_connect  axi_ad9361/rst tx_upack/reset
-	ad_connect tx_upack/s_axis  axi_ad9361_dac_dma/m_axis
+	#ad_connect tx_upack/s_axis  axi_ad9361_dac_dma/m_axis
 
 	ad_ip_instance util_vector_logic logic_or [list \
 	  C_OPERATION {or} \
 	  C_SIZE 1]
 
-	ad_connect  logic_or/Op1  axi_ad9361/dac_valid_i0
-	ad_connect  logic_or/Op2  axi_ad9361/dac_valid_i1
+	#ad_connect  logic_or/Op1  axi_ad9361/dac_valid_i0
+	#ad_connect  logic_or/Op2  axi_ad9361/dac_valid_i1
+	
 	ad_connect  logic_or/Res  tx_upack/fifo_rd_en
 	ad_connect  tx_upack/fifo_rd_underflow axi_ad9361/dac_dunf
 
@@ -456,41 +462,43 @@ if {[info exists maia_iio]} {
 	ad_ip_instance util_vector_logic logic_no_q0_tx [list \
 	  C_OPERATION {not} \
 	  C_SIZE 1]
-	ad_connect axi_ad9361/dac_enable_q0 logic_no_q0_tx/Op1
+	#ad_connect axi_ad9361/dac_enable_q0 logic_no_q0_tx/Op1
 
 	#Select input depending on dac_qo_enable
 	# *****  I PART **********
 
 	create_bd_cell -type module -reference ad_bus_mux muxcs8_tx_i
 
-	ad_connect muxcs8_tx_i/select_path logic_no_q0_tx/Res
-	ad_connect muxcs8_tx_i/enable_in_0 axi_ad9361/dac_enable_i0
+	#ad_connect muxcs8_tx_i/select_path logic_no_q0_tx/Res
+	#ad_connect muxcs8_tx_i/enable_in_0 axi_ad9361/dac_enable_i0
 	#First input CS16 - > I0 -> I0
-	ad_connect tx_upack/fifo_rd_data_0 muxcs8_tx_i/data_in_0
+	#ad_connect tx_upack/fifo_rd_data_0 muxcs8_tx_i/data_in_0
 	#Second input C8 - > CS16 > I0
-	ad_connect concatslicetx_i/Dout muxcs8_tx_i/data_in_1
-	ad_connect muxcs8_tx_i/enable_in_1 axi_ad9361/dac_enable_i0
+	#ad_connect concatslicetx_i/Dout muxcs8_tx_i/data_in_1
+	#ad_connect muxcs8_tx_i/enable_in_1 axi_ad9361/dac_enable_i0
 
 	#OUT
-	ad_connect muxcs8_tx_i/data_out axi_ad9361/dac_data_i0
-	ad_connect muxcs8_tx_i/enable_out tx_upack/enable_0
+	#ad_connect muxcs8_tx_i/data_out axi_ad9361/dac_data_i0
+	#ad_connect maia_sdr/tx_re_out axi_ad9361/dac_data_i0   ; # 우리의 DDS 데이터로 교체
+	#ad_connect muxcs8_tx_i/enable_out tx_upack/enable_0
 
 	#Select input depending on dac_qo_enable
 	# *****  Q PART **********
 
 	create_bd_cell -type module -reference ad_bus_mux muxcs8_tx_q
 
-	ad_connect muxcs8_tx_q/select_path logic_no_q0_tx/Res
-	ad_connect muxcs8_tx_q/enable_in_0 axi_ad9361/dac_enable_q0
+	#ad_connect muxcs8_tx_q/select_path logic_no_q0_tx/Res
+	#ad_connect muxcs8_tx_q/enable_in_0 axi_ad9361/dac_enable_q0
 	#First input CS16 - > I0 -> I0
-	ad_connect tx_upack/fifo_rd_data_1 muxcs8_tx_q/data_in_0
+	#ad_connect tx_upack/fifo_rd_data_1 muxcs8_tx_q/data_in_0
 	#Second input C8 - > CS16 > I0
-	ad_connect concatslicetx_q/Dout muxcs8_tx_q/data_in_1
-	ad_connect muxcs8_tx_q/enable_in_1 axi_ad9361/dac_enable_i0
+	#ad_connect concatslicetx_q/Dout muxcs8_tx_q/data_in_1
+	#ad_connect muxcs8_tx_q/enable_in_1 axi_ad9361/dac_enable_i0
 
 	#OUT
-	ad_connect muxcs8_tx_q/data_out axi_ad9361/dac_data_q0
-	ad_connect muxcs8_tx_q/enable_out tx_upack/enable_1
+	#ad_connect muxcs8_tx_q/data_out axi_ad9361/dac_data_q0
+	#ad_connect maia_sdr/tx_im_out axi_ad9361/dac_data_q0  
+	#ad_connect muxcs8_tx_q/enable_out tx_upack/enable_1
 
 	# ******************************************************************
 	#                       2ND CHANNEL 
@@ -534,18 +542,18 @@ if {[info exists maia_iio]} {
 
 	ad_connect muxcs82/select_path logic_no_q02/Res
 	#First input CS16 - > I0 -> I0
-	ad_connect axi_ad9361/adc_data_i1 muxcs82/data_in_0
-	ad_connect axi_ad9361/adc_valid_i1 muxcs82/valid_in_0
-	ad_connect axi_ad9361/adc_enable_q1 muxcs82/enable_in_0
+	#ad_connect axi_ad9361/adc_data_i1 muxcs82/data_in_0
+	#ad_connect axi_ad9361/adc_valid_i1 muxcs82/valid_in_0
+	#ad_connect axi_ad9361/adc_enable_q1 muxcs82/enable_in_0
 	#Second input CS8 - > I0+Q0
-	ad_connect concatslice_iq2/Dout muxcs82/data_in_1
-	ad_connect axi_ad9361/adc_valid_i1 muxcs82/valid_in_1
-	ad_connect GND muxcs82/enable_in_1
+	#ad_connect concatslice_iq2/Dout muxcs82/data_in_1
+	#ad_connect axi_ad9361/adc_valid_i1 muxcs82/valid_in_1
+	#ad_connect GND muxcs82/enable_in_1
 
 	#OUT
 	#ad_connect muxcs82/valid_out cpack/fifo_wr_en
-	ad_connect muxcs82/data_out cpack/fifo_wr_data_2
-	ad_connect muxcs82/enable_out cpack/enable_3
+	#ad_connect muxcs82/data_out cpack/fifo_wr_data_2
+	#ad_connect muxcs82/enable_out cpack/enable_3
 
 	# ======================= 8BITS TX2 OUT  ============================
 	# I PART
@@ -571,7 +579,7 @@ if {[info exists maia_iio]} {
 	ad_ip_parameter shiftsliceqtx2 CONFIG.DIN_FROM 7
 	ad_ip_parameter shiftsliceqtx2 CONFIG.DIN_TO 0
 	ad_ip_parameter shiftsliceqtx2 CONFIG.DOUT_WIDTH 8
-	ad_connect tx_upack/fifo_rd_data_2 shiftsliceqtx2/Din
+	#ad_connect tx_upack/fifo_rd_data_2 shiftsliceqtx2/Din
 
 	ad_ip_instance xlconcat concatslicetx_q2
 	ad_ip_parameter concatslicetx_q2 CONFIG.NUM_PORTS 3
@@ -584,39 +592,66 @@ if {[info exists maia_iio]} {
 	ad_ip_instance util_vector_logic logic_no_q0_tx2 [list \
 	  C_OPERATION {not} \
 	  C_SIZE 1]
-	ad_connect axi_ad9361/dac_enable_q1 logic_no_q0_tx2/Op1
+	#ad_connect axi_ad9361/dac_enable_q1 logic_no_q0_tx2/Op1
 
 
 	#Select input depending on dac_qo_enable
 	# *****  I PART **********
 	create_bd_cell -type module -reference ad_bus_mux muxcs8_tx_i2
 
-	ad_connect muxcs8_tx_i2/select_path logic_no_q0_tx2/Res
-	ad_connect muxcs8_tx_i2/enable_in_0 axi_ad9361/dac_enable_i1
+	#ad_connect muxcs8_tx_i2/select_path logic_no_q0_tx2/Res
+	#ad_connect muxcs8_tx_i2/enable_in_0 axi_ad9361/dac_enable_i1
 	#First input CS16 - > I0 -> I0
-	ad_connect tx_upack/fifo_rd_data_2 muxcs8_tx_i2/data_in_0
+	#ad_connect tx_upack/fifo_rd_data_2 muxcs8_tx_i2/data_in_0
 	#Second input C8 - > CS16 > I0
-	ad_connect concatslicetx_i2/Dout muxcs8_tx_i2/data_in_1
-	ad_connect muxcs8_tx_i2/enable_in_1 axi_ad9361/dac_enable_i1
+	#ad_connect concatslicetx_i2/Dout muxcs8_tx_i2/data_in_1
+	#ad_connect muxcs8_tx_i2/enable_in_1 axi_ad9361/dac_enable_i1
 
 	#OUT
-	ad_connect muxcs8_tx_i2/data_out axi_ad9361/dac_data_i1
-	ad_connect muxcs8_tx_i2/enable_out tx_upack/enable_2
+	#ad_connect muxcs8_tx_i2/data_out axi_ad9361/dac_data_i1
+	#ad_connect muxcs8_tx_i2/enable_out tx_upack/enable_2
 
 	#Select input depending on dac_qo_enable
 	# *****  Q PART **********
-	create_bd_cell -type module -reference ad_bus_mux muxcs8_tx_q2
+	#create_bd_cell -type module -reference ad_bus_mux muxcs8_tx_q2
 
-	ad_connect muxcs8_tx_q2/select_path logic_no_q0_tx2/Res
-	ad_connect muxcs8_tx_q2/enable_in_0 axi_ad9361/dac_enable_q1
+	a#d_connect muxcs8_tx_q2/select_path logic_no_q0_tx2/Res
+	#ad_connect muxcs8_tx_q2/enable_in_0 axi_ad9361/dac_enable_q1
 	#First input CS16 - > I0 -> I0
-	ad_connect tx_upack/fifo_rd_data_3 muxcs8_tx_q2/data_in_0
+	#ad_connect tx_upack/fifo_rd_data_3 muxcs8_tx_q2/data_in_0
 	#Second input C8 - > CS16 > I0
-	ad_connect concatslicetx_q2/Dout muxcs8_tx_q2/data_in_1
-	ad_connect muxcs8_tx_q2/enable_in_1 axi_ad9361/dac_enable_i1
+	#ad_connect concatslicetx_q2/Dout muxcs8_tx_q2/data_in_1
+	#ad_connect muxcs8_tx_q2/enable_in_1 axi_ad9361/dac_enable_i1
 
 	#OUT
-	ad_connect muxcs8_tx_q2/data_out axi_ad9361/dac_data_q1
-	ad_connect muxcs8_tx_q2/enable_out tx_upack/enable_3
+	#ad_connect muxcs8_tx_q2/data_out axi_ad9361/dac_data_q1
+	#ad_connect muxcs8_tx_q2/enable_out tx_upack/enable_3
 }
+
+# 1. 기존에 남아있을 수 있는 모든 DAC 연결을 강제로 끊습니다.
+#    오류가 발생해도 무시하고 계속 진행하도록 catch 구문을 사용합니다.
+#catch { disconnect_bd_net [get_bd_nets [get_bd_pins /axi_ad9361/dac_data_i0 -get_nets]] }
+#catch { disconnect_bd_net [get_bd_nets [get_bd_pins /axi_ad9361/dac_data_q0 -get_nets]] }
+#catch { disconnect_bd_net [get_bd_nets [get_bd_pins /axi_ad9361/dac_valid_i0 -get_nets]] }
+#catch { disconnect_bd_net [get_bd_nets [get_bd_pins /axi_ad9361/dac_enable_i0 -get_nets]] }
+#catch { disconnect_bd_net [get_bd_nets [get_bd_pins /axi_ad9361/dac_valid_q0 -get_nets]] }
+#catch { disconnect_bd_net [get_bd_nets [get_bd_pins /axi_ad9361/dac_enable_q0 -get_nets]] }
+
+# 2. 우리의 DDS 출력을 DAC에 1:1로 새로 연결합니다.
+#connect_bd_net [get_bd_pins /maia_sdr/tx_re_out] [get_bd_pins /axi_ad9361/dac_data_i0]
+#connect_bd_net [get_bd_pins /maia_sdr/tx_im_out] [get_bd_pins /axi_ad9361/dac_data_q0]
+#connect_bd_net [get_bd_pins /maia_sdr/dac_valid_i0_out] [get_bd_pins /axi_ad9361/dac_valid_i0]
+#connect_bd_net [get_bd_pins /maia_sdr/dac_enable_i0_out] [get_bd_pins /axi_ad9361/dac_enable_i0]
+#connect_bd_net [get_bd_pins /maia_sdr/dac_valid_q0_out] [get_bd_pins /axi_ad9361/dac_valid_q0]
+#connect_bd_net [get_bd_pins /maia_sdr/dac_enable_q0_out] [get_bd_pins /axi_ad9361/dac_enable_q0]
+# --- DDS 출력을 DAC에 연결하는 최종 코드 ---
+ad_connect maia_sdr/tx_re_out axi_ad9361/dac_data_i0
+ad_connect maia_sdr/tx_im_out axi_ad9361/dac_data_q0
+ad_connect maia_sdr/dac_valid_i0_out axi_ad9361/dac_valid_i0
+ad_connect maia_sdr/dac_enable_i0_out axi_ad9361/dac_enable_i0
+ad_connect maia_sdr/dac_valid_q0_out axi_ad9361/dac_valid_q0
+ad_connect maia_sdr/dac_enable_q0_out axi_ad9361/dac_enable_q0
+
+
+puts "INFO: Custom DDS TX path connected."
 

@@ -14,5 +14,13 @@ adi_project_files pluto [list \
 set_property strategy Performance_ExplorePostRoutePhysOpt [get_runs impl_1]
 
 set_property is_enabled false [get_files  *system_sys_ps7_0.xdc]
+#adi_project_run pluto
+
+
+# adi_project_run pluto ; # 기존 빌드 실행 명령을 잠시 주석 처리
+
+
 adi_project_run pluto
+
+
 source $ad_hdl_dir/library/axi_ad9361/axi_ad9361_delay.tcl

@@ -227,7 +227,11 @@ class MaiaSDR(Elaboratable):
         self.dds = DDS() 
         self.tx_re_out = Signal(12)
         self.tx_im_out = Signal(12)
-        self.tx_valid_out = Signal()
+        self.dac_valid_i0_out = Signal()
+        self.dac_enable_i0_out = Signal()
+        self.dac_valid_q0_out = Signal()
+        self.dac_enable_q0_out = Signal()
+
     def ports(self):
         return (
             self.axi4lite.axi.ports()
@@ -245,9 +249,12 @@ class MaiaSDR(Elaboratable):
                 self.clk2x.clk,
                 self.clk3x.clk,
 
-                    self.tx_re_out,
-                    self.tx_im_out,
-                    self.tx_valid_out,
+                self.tx_re_out,
+                self.tx_im_out,
+                self.dac_valid_i0_out,
+                self.dac_enable_i0_out,
+                self.dac_valid_q0_out,
+                self.dac_enable_q0_out,
             ]
         )
 
@@ -467,7 +474,11 @@ class MaiaSDR(Elaboratable):
             # DDS 모듈의 출력을 MaiaSDR의 최상위 포트로 연결
             self.tx_re_out.eq(self.dds.dac_data_i),
             self.tx_im_out.eq(self.dds.dac_data_q),
-            self.tx_valid_out.eq(self.dds.dac_valid),
+                # DDS의 valid 출력을 4개의 포트에 모두 복제하여 연결
+            self.dac_valid_i0_out.eq(self.dds.dac_valid),
+            self.dac_enable_i0_out.eq(self.dds.dac_valid),
+            self.dac_valid_q0_out.eq(self.dds.dac_valid),
+            self.dac_enable_q0_out.eq(self.dds.dac_valid),
         ]
 
         return m
