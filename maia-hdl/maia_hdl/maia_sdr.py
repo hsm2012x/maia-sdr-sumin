@@ -25,6 +25,8 @@ from .recorder import Recorder16IQ, RecorderMode
 from .spectrometer import Spectrometer
 from amaranth.lib.fifo import SyncFIFO
 from .loopback_sumin import LoopbackPath
+from .dds import DDS
+from .lfm import LFM
 # IP core version
 _version = '0.6.2'
 
@@ -125,7 +127,7 @@ class MaiaSDR(Elaboratable):
                         Field('loopback_enable',
                               Access.RW,
                               1,
-                              1),
+                              0),
                     ]),
                 0b001: Register(
                     'ddc_coeff_addr',
@@ -231,10 +233,21 @@ class MaiaSDR(Elaboratable):
 
         self.loopback_path = LoopbackPath(self.iq_in_width)
 
-        self.tx_re_out = Signal(12)
-        self.tx_im_out = Signal(12)
+        self.tx_re_out = Signal(16)
+        self.tx_im_out = Signal(16)
         self.tx_ready_in = Signal()
 
+        
+                # 2. 고정된 파라미터로 DDS 모듈 인스턴스화
+        # 여기서 값을 바꾸고 다시 빌드하면 동작이 변경됨
+        # self.dds = DDS(
+        #     tuning_word_0=-55924053,  # -400kHz @ 30.72Msps
+        #     tuning_word_1=0,           #   0Hz
+        #     tuning_word_2=55924053,   # +400kHz @ 30.72Msps
+        #     hop_rate=1023,             # 1024 클럭마다 호핑
+        #     sample_width=12
+        # )
+        self.lfm = LFM()
 
     def ports(self):
         return (
@@ -293,38 +306,54 @@ class MaiaSDR(Elaboratable):
             'sync', 'clk3x', 3)
 
 
-         # 3. LoopbackPath 모듈을 'sampling' 클럭 도메인에서 동작하도록 설정
-        m.submodules.loopback_path = DomainRenamer("sampling")(self.loopback_path)
 
         # RX IQ CDC
         m.submodules.rxiq_cdc = rxiq_cdc = RxIQCDC(
             'sampling', 'sync', self.iq_in_width)
         m.d.comb += [rxiq_cdc.re_in.eq(self.re_in),
                      rxiq_cdc.im_in.eq(self.im_in)]
-        # 4. 제어 신호(loopback_enable)를 'sync' -> 'sampling'으로 안전하게 전달
-        # FFSynchronizer를 사용한 CDC (Clock Domain Crossing)
+
+        # 1. DDS와 LoopbackPath 모듈을 'sampling' 클럭 도메인으로 이동
+        m.submodules.lfm = lfm = DomainRenamer("sampling")(self.lfm)
+        m.submodules.loopback_path = loopback_path = DomainRenamer("sampling")(self.loopback_path)
+
+        # 2. 제어 신호(loopback_enable)를 'sync' -> 'sampling'으로 동기화 (CDC)
+        loopback_enabled_s = Signal()
         m.submodules.loopback_cdc = FFSynchronizer(
             i=self.sdr_registers['spectrometer']['loopback_enable'],
-            o=self.loopback_path.loopback_enabled,
-            o_domain="sampling" # 출력 도메인을 'sampling'으로 지정
+            o=loopback_enabled_s,
+            o_domain="sampling"
         )
-                # 5. 신호 연결
+        
+        # 3. 각 모듈의 입력 및 핸드셰이크 신호 연결
         m.d.comb += [
-            # RxIQCDC('sync' 도메인)의 출력을 LoopbackPath('sampling' 도메인)의 입력으로 직접 연결하는 대신,
-            # RxIQCDC 자체를 'sampling' 도메인에서 동작시켜야 합니다.
-            # 하지만 RxIQCDC는 이미 sampling->sync 변환기이므로, 그 입력인 re_in/im_in을 사용합니다.
-            self.loopback_path.rx_re_in.eq(self.re_in),
-            self.loopback_path.rx_im_in.eq(self.im_in),
-            # re_in/im_in은 strobe 신호가 없으므로, 모든 사이클에 유효하다고 가정합니다.
-            self.loopback_path.rx_strobe_in.eq(1), 
-            
-            # LoopbackPath의 준비 신호 입력 연결
-            self.loopback_path.tx_ready_in.eq(self.tx_ready_in),
+            # DDS 핸드셰이크
+            lfm.ready_in.eq(self.tx_ready_in),
 
-            # LoopbackPath의 최종 출력을 MaiaSDR의 최상위 출력 포트로 연결
-            self.tx_re_out.eq(self.loopback_path.tx_re_out),
-            self.tx_im_out.eq(self.loopback_path.tx_im_out),
+            # LoopbackPath 입력 연결
+            loopback_path.rx_re_in.eq(self.re_in), # sampling 도메인 신호 직접 연결
+            loopback_path.rx_im_in.eq(self.im_in), # sampling 도메인 신호 직접 연결
+            loopback_path.rx_strobe_in.eq(1),      # 매 클럭 데이터가 유효하다고 가정
+            loopback_path.tx_ready_in.eq(self.tx_ready_in),
+            loopback_path.loopback_enabled.eq(loopback_enabled_s), # 동기화된 제어 신호
         ]
+
+        # 4. 최종 출력 MUX 로직 (Driver-Driver Conflict 해결)
+        shift = 16 - self.iq_in_width  # 4
+        
+        # 모든 최종 출력을 단일 'm.d.sampling' 블록에서 처리
+        with m.If(loopback_enabled_s):
+            # 루프백 모드: LoopbackPath의 출력을 최종 출력 포트로 할당
+            m.d.sampling += [
+                self.tx_re_out.eq(loopback_path.tx_re_out),
+                self.tx_im_out.eq(loopback_path.tx_im_out),
+            ]
+        with m.Else():
+            # DDS 모드: DDS의 출력을 포맷팅하여 최종 출력 포트로 할당
+            m.d.sampling += [
+                self.tx_re_out.eq(lfm.dac_data_i << shift),
+                self.tx_im_out.eq(lfm.dac_data_q << shift),
+            ]
 
 
 

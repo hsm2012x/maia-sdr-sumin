@@ -200,7 +200,7 @@ ad_ip_parameter axi_ad9361 CONFIG.DAC_DDS_DISABLE 1
 
 # my add
 ad_ip_parameter axi_ad9361 CONFIG.DAC_USERPORTS_DISABLE 0
-ad_ip_parameter axi_ad9361 CONFIG.DAC_USERPORTS_DISABLE 0	
+
 if {![info exists maia_iio]} {
 	ad_ip_parameter axi_ad9361 CONFIG.ADC_USERPORTS_DISABLE 0
 	ad_ip_parameter axi_ad9361 CONFIG.ADC_DCFILTER_DISABLE 1
