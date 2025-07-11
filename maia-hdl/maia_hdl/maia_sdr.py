@@ -10,7 +10,9 @@ import argparse
 
 from amaranth import *
 from amaranth.lib.cdc import FFSynchronizer, PulseSynchronizer
+from amaranth.lib.fifo import AsyncFIFO  # <<< 1. AsyncFIFO 임포트 추가
 import amaranth.back.verilog
+
 
 from .axi4_lite import Axi4LiteRegisterBridge
 from .cdc import RegisterCDC, RxIQCDC
@@ -23,7 +25,7 @@ from .pluto_platform import PlutoPlatform
 from .register import Access, Field, Registers, Register, RegisterMap
 from .recorder import Recorder16IQ, RecorderMode
 from .spectrometer import Spectrometer
-
+from .lfm import LFM
 # IP core version
 _version = '0.6.2'
 
@@ -46,7 +48,7 @@ class MaiaSDR(Elaboratable):
         self.sync = ClockDomain()
         self.clk2x = ClockDomain()
         self.clk3x = ClockDomain()
-
+        self.dac = ClockDomain()
         self.axi4lite = Axi4LiteRegisterBridge(
             self.axi4_awidth, name='s_axi_lite')
         self.control_registers = Registers(
@@ -202,7 +204,12 @@ class MaiaSDR(Elaboratable):
                               1,
                               0),
                     ]),
-            }, 3)
+                    0b110:Register('tx_control', [
+                        Field('source_select', Access.RW, 2, 1) # 0=DDS, 1=LFM
+                    ]),
+            }, 4 )
+        self.lfm = LFM()
+
         metadata = {
             'vendor': 'Daniel Estevez',
             'vendorID': 'destevez.net',
@@ -213,16 +220,42 @@ class MaiaSDR(Elaboratable):
             'licenseText': ('SPDX-License-Identifier: MIT '
                             'Copyright (C) Daniel Estevez 2022-2024'),
         }
+
+        self.lfm_registers = Registers(
+            'lfm', {
+                0b00: Register('lfm_control', [
+                    Field('start', Access.Wpulse, 1, 0),
+                    Field('stop', Access.Wpulse, 1, 0),
+                    Field('running', Access.R, 1, 0),
+                ]),
+                0b01: Register('lfm_tw_min', [
+                    Field('value', Access.RW, 32, 0)
+                ]),
+                0b10: Register('lfm_tw_max', [
+                    Field('value', Access.RW, 32, 349525333)
+                ]),
+                0b11: Register('lfm_chirp_step', [
+                    Field('value', Access.RW, 32, 170666)
+                ]),
+                # ... 추가 레지스터 ...
+            }, 2) # 주소 비트 2개 (4개 레지스터)
         self.register_map = RegisterMap({
             0x0: self.control_registers,
             0x10: self.recorder_registers,
             0x20: self.sdr_registers,
+            0x40: self.lfm_registers
         }, metadata)
 
         self.iq_in_width = 12
         self.re_in = Signal(self.iq_in_width)
         self.im_in = Signal(self.iq_in_width)
         self.interrupt_out = Signal()
+
+        self.dac_clk_in = Signal()
+        self.dac_enable_in = Signal()
+        self.dac_valid_in = Signal()
+        self.tx_re_out = Signal(12)
+        self.tx_im_out = Signal(12)
 
     def ports(self):
         return (
@@ -240,6 +273,12 @@ class MaiaSDR(Elaboratable):
                 self.sync.rst,
                 self.clk2x.clk,
                 self.clk3x.clk,
+                self.dac_enable_in,
+                self.dac_valid_in,
+                self.tx_re_out,
+                self.tx_im_out,
+                self.dac_clk_in,
+
             ]
         )
 
@@ -254,7 +293,9 @@ class MaiaSDR(Elaboratable):
             self.sync,
             self.clk2x,
             self.clk3x,
+            self.dac,
         ]
+        m.d.comb += ClockSignal("dac").eq(self.dac_clk_in)
         s_axi_lite_renamer = DomainRenamer({'sync': 's_axi_lite'})
         m.submodules.axi4lite = s_axi_lite_renamer(self.axi4lite)
         m.submodules.control_registers = s_axi_lite_renamer(
@@ -270,7 +311,6 @@ class MaiaSDR(Elaboratable):
         m.submodules.sdr_registers = self.sdr_registers
         m.submodules.sdr_registers_cdc = sdr_registers_cdc = RegisterCDC(
             's_axi_lite', 'sync', self.sdr_registers.aw)
-
         m.submodules.common_edge_2x = common_edge_2x = ClkNxCommonEdge(
             'sync', 'clk2x', 2)
         m.submodules.common_edge_3x = common_edge_3x = ClkNxCommonEdge(
@@ -305,6 +345,7 @@ class MaiaSDR(Elaboratable):
                 spectrometer_im_in.eq(rxiq_cdc.im_out << shift),
                 spectrometer_strobe_in.eq(rxiq_cdc.strobe_out),
             ]
+        # spectrometer reg
         m.d.comb += [
             self.spectrometer.strobe_in.eq(spectrometer_strobe_in),
             self.spectrometer.common_edge_2x.eq(common_edge_2x.common_edge),
@@ -378,6 +419,13 @@ class MaiaSDR(Elaboratable):
             self.ddc.re_in.eq(rxiq_cdc.re_out),
             self.ddc.im_in.eq(rxiq_cdc.im_out),
         ]
+        
+        # LFM
+        m.submodules.lfm = self.lfm
+
+        m.submodules.tx_fifo = tx_fifo = AsyncFIFO(
+            width=24, depth=16, r_domain="dac", w_domain="sync")
+
 
         # Registers s_axi_lite domain
         # TODO: convert all of this into a RegisterCrossbar module
@@ -388,6 +436,8 @@ class MaiaSDR(Elaboratable):
             ~sdr_regs_select & (self.axi4lite.address[2] == 1))
         control_regs_select = (
             ~sdr_regs_select & (self.axi4lite.address[2] == 0))
+        lfm_regs_select = self.axi4lite.address[4:7] == 0b100
+
         m.d.s_axi_lite += [
             self.axi4lite.rdata.eq(self.control_registers.rdata
                                    | self.recorder_registers.rdata
@@ -412,7 +462,12 @@ class MaiaSDR(Elaboratable):
                 Mux(sdr_regs_select, self.axi4lite.wstrobe, 0)),
             address.eq(self.axi4lite.address),
             wdata.eq(self.axi4lite.wdata),
+            self.lfm_registers.ren.eq(self.lfm_registers.ren & lfm_regs_select),
+            self.lfm_registers.wstrobe.eq(
+                Mux(lfm_regs_select, self.axi4lite.wstrobe, 0)
+            )
         ]
+        # register block에 주소/데이터 전달
         m.d.comb += [
             self.control_registers.address.eq(address),
             self.control_registers.wdata.eq(wdata),
@@ -420,6 +475,9 @@ class MaiaSDR(Elaboratable):
             self.recorder_registers.wdata.eq(wdata),
             sdr_registers_cdc.i_address.eq(address),
             sdr_registers_cdc.i_wdata.eq(wdata),
+            self.lfm_registers.address.eq(address),
+            self.lfm_registers.wdata.eq(wdata),
+
         ]
 
         # Registers sync domain
@@ -431,6 +489,7 @@ class MaiaSDR(Elaboratable):
             sdr_registers_cdc.o_rdone.eq(self.sdr_registers.rdone),
             sdr_registers_cdc.o_wdone.eq(self.sdr_registers.wdone),
             sdr_registers_cdc.o_rdata.eq(self.sdr_registers.rdata),
+            
         ]
         # internal resets
         # We use FFSynchronizer rather than ResetSynchronizer because of
@@ -449,6 +508,32 @@ class MaiaSDR(Elaboratable):
             self.interrupt_out.eq(interrupts_reg.interrupt),
             interrupts_reg['spectrometer'].eq(sync_spectrometer_interrupt.o),
             interrupts_reg['recorder'].eq(self.recorder.finished),
+        ]
+        # --- LFM 모듈과 레지스터 블록 연결 ---
+        m.d.comb += [
+            self.lfm.reg_addr.eq(self.lfm_registers.address),
+            self.lfm.reg_wdata.eq(self.lfm_registers.wdata),
+            # Wpulse는 1클럭 펄스이므로, wstrobe를 그대로 연결
+            self.lfm.reg_wstrobe.eq(self.lfm_registers.wstrobe.any()),
+            self.lfm_registers.rdata.eq(self.lfm.reg_rdata),
+        ]
+
+        lfm_is_running = self.lfm_registers['lfm_control']['running']
+        m.d.comb += [
+            self.lfm.dac_enable_in.eq(lfm_is_running),
+            self.lfm.dac_valid_in.eq(tx_fifo.w_rdy)
+        ]
+         # LFM의 출력을 FIFO의 쓰기 포트로 연결 (sync 도메인)
+        m.d.comb += tx_fifo.w_data.eq(Cat(self.lfm.dac_data_i, self.lfm.dac_data_q))
+        m.d.comb += tx_fifo.w_en.eq(lfm_is_running & tx_fifo.w_rdy)
+
+        # FIFO의 읽기 활성화 신호는 dac_clk 도메인의 신호들로 제어됩니다.
+        m.d.comb += tx_fifo.r_en.eq(self.dac_enable_in & self.dac_valid_in)
+        
+        # FIFO의 읽기 데이터(dac 도메인)를 최종 출력 포트로 연결합니다.
+        m.d.comb += [
+            self.tx_re_out.eq(tx_fifo.r_data[0:12]),
+            self.tx_im_out.eq(tx_fifo.r_data[12:24]),
         ]
 
         return m

@@ -197,7 +197,7 @@ ad_ip_parameter axi_ad9361 CONFIG.ADC_INIT_DELAY 21
 # parameters to reduce size
 ad_ip_parameter axi_ad9361 CONFIG.TDD_DISABLE 1
 ad_ip_parameter axi_ad9361 CONFIG.DAC_DDS_DISABLE 1
-	
+ad_ip_parameter axi_ad9361 CONFIG.DAC_USERPORTS_DISABLE 0
 if {![info exists maia_iio]} {
 	ad_ip_parameter axi_ad9361 CONFIG.ADC_USERPORTS_DISABLE 1
 	ad_ip_parameter axi_ad9361 CONFIG.ADC_DCFILTER_DISABLE 1
@@ -354,7 +354,11 @@ create_bd_addr_seg -range 0x20000000 -offset 0x00000000 \
                     [get_bd_addr_segs sys_ps7/S_AXI_HP1/HP1_DDR_LOWOCM] \
                     SEG_sys_ps7_HP1_DDR_LOWOCM
 
-
+ad_connect axi_ad9361/l_clk maia_sdr/dac_clk
+ad_connect axi_ad9361/dac_enable_i0 maia_sdr/dac_enable_in
+ad_connect axi_ad9361/dac_valid_i0 maia_sdr/dac_valid_in
+ad_connect maia_sdr/tx_re_out axi_ad9361/dac_data_i0
+ad_connect maia_sdr/tx_im_out axi_ad9361/dac_data_q0
 # interrupts
 if {[info exists maia_iio]} {
 	ad_cpu_interrupt ps-13 mb-13 axi_ad9361_adc_dma/irq
