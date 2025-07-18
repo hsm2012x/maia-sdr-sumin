@@ -1,0 +1,51 @@
+# tx_cdc.py 최종 수정안
+
+from amaranth import *
+from .fifo import AsyncFifo18_36
+
+class TxIQCDC(Elaboratable):
+    """
+    TX IQ 데이터 전송을 위한 CDC 모듈.
+    LFM('sync' 도메인)에서 DAC('dac'/'sampling' 도메인)로 데이터를 전달합니다.
+    """
+    def __init__(self, i_domain: str, o_domain: str, width: int = 12):
+        self._i_domain = i_domain
+        self._o_domain = o_domain
+        self.w = width
+
+        # --- 쓰기 측 포트 (LFM이 사용) ---
+        self.re_in = Signal(signed(width))
+        self.im_in = Signal(signed(width))
+        self.w_en = Signal()      # LFM이 "데이터가 유효하다"고 알리는 신호
+        self.w_rdy = Signal()     # FIFO가 "데이터를 받을 준비가 됐다"고 알리는 신호
+
+        # --- 읽기 측 포트 (axi_ad9361이 사용) ---
+        self.re_out = Signal(signed(width))
+        self.im_out = Signal(signed(width))
+        self.r_en = Signal()      # axi_ad9361이 "데이터를 달라"고 요청하는 신호
+        
+        self.reset = Signal()
+        self.almost_empty = Signal() # FIFO가 거의 비었음을 알리는 플래그
+
+    def elaborate(self, platform):
+        m = Module()
+        m.submodules.fifo = fifo = AsyncFifo18_36(
+            r_domain=self._o_domain, w_domain=self._i_domain)
+
+        # --- 쓰기 측 ('sync' 도메인) ---
+        m.d.comb += [
+            fifo.data_in.eq(Cat(self.re_in, self.im_in)),
+            fifo.wren.eq(self.w_en & self.w_rdy),
+            self.w_rdy.eq(~fifo.full),
+        ]
+        
+        # --- 읽기 측 ('dac'/'sampling' 도메인) ---
+        m.d.comb += [
+            self.re_out.eq(fifo.data_out[:self.w]),
+            self.im_out.eq(fifo.data_out[self.w:]),
+            fifo.rden.eq(self.r_en),
+            self.almost_empty.eq(fifo.empty) # 편의를 위해 empty 신호를 출력
+        ]
+
+        m.d.comb += fifo.reset.eq(self.reset)
+        return m
