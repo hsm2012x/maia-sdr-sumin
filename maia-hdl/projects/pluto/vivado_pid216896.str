@@ -1,0 +1,287 @@
+/*
+
+AMD Vivado v2023.2 (64-bit) [Major: 2023, Minor: 2]
+SW Build: 4029153 on Fri Oct 13 20:13:54 MDT 2023
+IP Build: 4028589 on Sat Oct 14 00:45:43 MDT 2023
+IP Build: 4028589 on Sat Oct 14 00:45:43 MDT 2023
+
+Process ID (PID): 216896
+License: Customer
+Mode: GUI Mode
+
+Current time: 	Mon Jul 21 06:09:47 UTC 2025
+Time zone: 	Coordinated Universal Time (Etc/UTC)
+
+OS: Ubuntu
+OS Version: 6.8.0-60-generic
+OS Architecture: amd64
+Available processors (cores): 22
+LSB Release Description: DISTRIB_ID=Ubuntu
+
+Display: 0
+Screen size: 2560x1440
+Local screen bounds: x = 1920, y = 0, width = 2560, height = 1440
+Screen resolution (DPI): 100
+Available screens: 3
+Default font: family=Dialog,name=Dialog,style=plain,size=12
+Scale size: 12
+OS font scaling: 100%
+Anti-Alias Enabled: true
+
+Java version: 	17.0.7 64-bit
+JavaFX version: 17.0.1
+Java home: 	/opt/Xilinx/Vivado/2023.2/tps/lnx64/jre17.0.7_7
+Java executable: 	/opt/Xilinx/Vivado/2023.2/tps/lnx64/jre17.0.7_7/bin/java
+Java arguments: 	[-Dsun.java2d.pmoffscreen=false, -Dhttps.protocols=TLSv1,TLSv1.1,TLSv1.2, -Dsun.java2d.xrender=false, -Djdk.gtk.version=2, -Dsun.java2d.uiScale.enabled=false, -Dswing.aatext=true, -XX:-UsePerfData, -Djdk.map.althashing.threshold=512, -XX:StringTableSize=4072, -XX:+UseStringDeduplication, -XX:MaxGCPauseMillis=200, -XX:+ParallelRefProcEnabled, --add-opens=java.desktop/javax.swing.plaf.synth=ALL-UNNAMED, --add-opens=java.base/java.nio=ALL-UNNAMED, --add-opens=java.desktop/sun.swing=ALL-UNNAMED, --add-opens=java.desktop/javax.swing=ALL-UNNAMED, --add-opens=java.desktop/javax.swing.tree=ALL-UNNAMED, --add-opens=java.desktop/javax.swing.plaf.basic=ALL-UNNAMED, --add-opens=java.desktop/javax.swing.plaf.synth=ALL-UNNAMED, --add-opens=java.desktop/javax.swing.plaf.basic=ALL-UNNAMED, --add-opens=java.desktop/javax.swing=ALL-UNNAMED, --add-opens=java.desktop/javax.swing.tree=ALL-UNNAMED, --add-opens=java.desktop/java.awt.event=ALL-UNNAMED, --add-exports=java.desktop/javax.swing.plaf.synth=ALL-UNNAMED, --add-exports=java.base/java.nio=ALL-UNNAMED, --add-exports=java.desktop/sun.swing=ALL-UNNAMED, --add-exports=java.desktop/javax.swing=ALL-UNNAMED, --add-exports=java.desktop/javax.swing.tree=ALL-UNNAMED, --add-exports=java.desktop/javax.swing.plaf.basic=ALL-UNNAMED, --add-exports=java.desktop/sun.swing=ALL-UNNAMED, --add-exports=java.desktop/sun.swing.table=ALL-UNNAMED, --add-exports=java.desktop/sun.swing.plaf.synth=ALL-UNNAMED, --add-exports=java.desktop/sun.awt.shell=ALL-UNNAMED, --add-exports=java.base/sun.security.action=ALL-UNNAMED, --add-exports=java.desktop/sun.font=ALL-UNNAMED, --add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED, -XX:NewSize=80m, -XX:MaxNewSize=80m, -Xms512m, -Xmx4072m, -Xss10m, -Xrs]
+Java initial memory (-Xms): 	512 MB
+Java maximum memory (-Xmx):	 3 GB
+
+User name: 	ubuntu
+User home directory: /home/ubuntu
+User working directory: /hdl/plutosdr-fw/maia-sdr/maia-hdl/projects/pluto
+User country: 	US
+User language: 	en
+User locale: 	en_US
+
+RDI_BASEROOT: /opt/Xilinx/Vivado
+HDI_APPROOT: /opt/Xilinx/Vivado/2023.2
+RDI_DATADIR: /opt/Xilinx/SharedData/2023.2/data:/opt/Xilinx/Vivado/2023.2/data
+RDI_BINDIR: /opt/Xilinx/Vivado/2023.2/bin
+
+Vivado preferences file: /home/ubuntu/.Xilinx/Vivado/2023.2/vivado.xml
+Vivado preferences directory: /home/ubuntu/.Xilinx/Vivado/2023.2/
+Vivado layouts directory: /home/ubuntu/.Xilinx/Vivado/2023.2/data/layouts
+PlanAhead jar file: 	/opt/Xilinx/Vivado/2023.2/lib/classes/planAhead.jar
+Vivado log file: 	/hdl/plutosdr-fw/maia-sdr/maia-hdl/projects/pluto/vivado.log
+Vivado journal file: 	/hdl/plutosdr-fw/maia-sdr/maia-hdl/projects/pluto/vivado.jou
+Engine tmp dir: 	./.Xil/Vivado-216896-sumin-ASUS-Vivobook-Pro-15-N6506MV-N6506MV
+Non-Default Parameters:	[]
+
+Xilinx & AMD Environment Variables
+--------------------------------------------------------------------------------------------
+RDI_APPROOT: /opt/Xilinx/Vivado/2023.2
+RDI_BASEROOT: /opt/Xilinx/Vivado
+RDI_BINROOT: /opt/Xilinx/Vivado/2023.2/bin
+RDI_BUILD: yes
+RDI_DATADIR: /opt/Xilinx/SharedData/2023.2/data:/opt/Xilinx/Vivado/2023.2/data
+RDI_INSTALLROOT: /opt/Xilinx
+RDI_INSTALLVER: 2023.2
+RDI_JAVA_PLATFORM: 
+RDI_JAVA_VERSION: 17.0.7_7
+RDI_LIBDIR: /opt/Xilinx/Vivado/2023.2/lib/lnx64.o/Default:/opt/Xilinx/Vivado/2023.2/lib/lnx64.o
+RDI_OPT_EXT: .o
+RDI_PATCHROOT: 
+RDI_PLATFORM: lnx64
+RDI_PREPEND_PATH: /opt/Xilinx/Vitis/2023.2/bin:/opt/Xilinx/Vivado/2023.2/ids_lite/ISE/bin/lin64
+RDI_PROG: /opt/Xilinx/Vivado/2023.2/bin/unwrapped/lnx64.o/vivado
+RDI_SESSION_INFO: /hdl/plutosdr-fw/maia-sdr/maia-hdl/projects/pluto:sumin-ASUS-Vivobook-Pro-15-N6506MV-N6506MV_1753078177_216858
+RDI_SHARED_DATA: /opt/Xilinx/SharedData/2023.2/data
+RDI_TPS_ROOT: /opt/Xilinx/Vivado/2023.2/tps/lnx64
+RDI_USE_JDK17: True
+XILINX: /opt/Xilinx/Vivado/2023.2/ids_lite/ISE
+XILINX_DSP: /opt/Xilinx/Vivado/2023.2/ids_lite/ISE
+XILINX_HLS: /opt/Xilinx/Vitis_HLS/2023.2
+XILINX_PLANAHEAD: /opt/Xilinx/Vivado/2023.2
+XILINX_SDK: /opt/Xilinx/Vitis/2023.2
+XILINX_VITIS: /opt/Xilinx/Vitis/2023.2
+XILINX_VIVADO: /opt/Xilinx/Vivado/2023.2
+XILINX_VIVADO_HLS: /opt/Xilinx/Vivado/2023.2
+
+
+GUI allocated memory:	512 MB
+GUI max memory:		4,072 MB
+Engine allocated memory: 1,536 MB
+
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
+
+*/
+
+// TclEventType: START_GUI
+// Tcl Message: start_gui 
+// HMemoryUtils.trashcanNow. Engine heap size: 1,555 MB. GUI used memory: 68 MB. Current time: 7/21/25, 6:09:48 AM UTC
+selectList(PAResourceQtoS.SyntheticaGettingStartedView_RECENT_PROJECTS, "/hdl/plutosdr-fw/maia-sdr/maia-hdl/projects/pluto/pluto.xpr", 0); // b.c (PAResourceQtoS.SyntheticaGettingStartedView_RECENT_PROJECTS)
+// [GUI Memory]: 121 MB (+124295kb) [00:00:22]
+// [Engine Memory]: 1,604 MB (+1530587kb) [00:00:22]
+// Opening Vivado Project: /hdl/plutosdr-fw/maia-sdr/maia-hdl/projects/pluto/pluto.xpr. Version: Vivado v2023.2 
+// TclEventType: DEBUG_PROBE_SET_CHANGE
+// TclEventType: FLOW_ADDED
+// TclEventType: MSGMGR_MOVEMSG
+// TclEventType: FILE_SET_CHANGE
+// TclEventType: FILE_SET_NEW
+// TclEventType: RUN_COMPLETED
+// TclEventType: RUN_STATUS_CHANGE
+// TclEventType: RUN_COMPLETED
+// TclEventType: RUN_STATUS_CHANGE
+// TclEventType: RUN_COMPLETED
+// TclEventType: RUN_STATUS_CHANGE
+// TclEventType: RUN_COMPLETED
+// TclEventType: RUN_STATUS_CHANGE
+// TclEventType: RUN_COMPLETED
+// TclEventType: RUN_STATUS_CHANGE
+// TclEventType: RUN_COMPLETED
+// TclEventType: RUN_STATUS_CHANGE
+// TclEventType: RUN_COMPLETED
+// TclEventType: RUN_STATUS_CHANGE
+// TclEventType: RUN_COMPLETED
+// TclEventType: RUN_STATUS_CHANGE
+// TclEventType: RUN_COMPLETED
+// TclEventType: RUN_STATUS_CHANGE
+// TclEventType: RUN_CURRENT
+// TclEventType: MSGMGR_REFRESH_MSG
+// TclEventType: PROJECT_DASHBOARD_NEW
+// TclEventType: PROJECT_DASHBOARD_GADGET_NEW
+// TclEventType: PROJECT_DASHBOARD_GADGET_CHANGE
+// TclEventType: PROJECT_DASHBOARD_GADGET_NEW
+// TclEventType: PROJECT_DASHBOARD_GADGET_CHANGE
+// TclEventType: PROJECT_DASHBOARD_GADGET_NEW
+// TclEventType: PROJECT_DASHBOARD_GADGET_CHANGE
+// TclEventType: PROJECT_DASHBOARD_GADGET_NEW
+// TclEventType: PROJECT_DASHBOARD_GADGET_CHANGE
+// TclEventType: PROJECT_DASHBOARD_GADGET_NEW
+// TclEventType: PROJECT_DASHBOARD_GADGET_CHANGE
+// TclEventType: PROJECT_DASHBOARD_GADGET_NEW
+// TclEventType: PROJECT_DASHBOARD_GADGET_CHANGE
+// Tcl Message: open_project /hdl/plutosdr-fw/maia-sdr/maia-hdl/projects/pluto/pluto.xpr 
+// TclEventType: COMPOSITE_FILE_CHANGE
+// TclEventType: FILE_SET_CHANGE
+// TclEventType: PROJECT_NEW
+// [GUI Memory]: 134 MB (+7765kb) [00:00:24]
+// [Engine Memory]: 1,877 MB (+201652kb) [00:00:24]
+// WARNING: HEventQueue.dispatchEvent() is taking  1753 ms.
+// Tcl Message: open_project /hdl/plutosdr-fw/maia-sdr/maia-hdl/projects/pluto/pluto.xpr 
+// Tcl Message: Scanning sources... Finished scanning sources 
+// Tcl Message: INFO: [IP_Flow 19-234] Refreshing IP repositories INFO: [IP_Flow 19-1700] Loaded user IP repository '/hdl/plutosdr-fw/maia-sdr/maia-hdl/ip'. INFO: [IP_Flow 19-1700] Loaded user IP repository '/hdl/plutosdr-fw/maia-sdr/maia-hdl/adi-hdl/library'. INFO: [IP_Flow 19-2313] Loaded Vivado IP repository '/opt/Xilinx/Vivado/2023.2/data/ip'. 
+// [Engine Memory]: 1,983 MB (+12824kb) [00:00:26]
+// Project name: pluto; location: /hdl/plutosdr-fw/maia-sdr/maia-hdl/projects/pluto; part: xc7z010clg225-1
+dismissDialog("Open Project"); // bq (Open Project Progress)
+// [Engine Memory]: 2,124 MB (+44364kb) [00:00:27]
+// [GUI Memory]: 150 MB (+9149kb) [00:00:27]
+selectTreeTable(PAResourceEtoH.ExpRunTreePanel_EXP_RUN_TREE_TABLE, "impl_1 ; constrs_1 ; write_bitstream Complete! ; -5.118328094482422 ; -5.118328094482422 ; 0.049197424203157425 ; 0.0 ;  ; 0.0 ; 1.7151098251342773 ; 0 ; 3 CW, 29 Warn ;  ;  ; 5426 ; 6497 ; 30.5 ; 0 ; 18 ; Mon Jul 21 06:07:14 UTC 2025 ; 00:01:18 ; Performance_ExplorePostRoutePhysOpt (Vivado Implementation 2023) ; Vivado Implementation Default Reports (Vivado Implementation 2023) ; xc7z010clg225-1 ; sumin-ASUS-Vivobook-Pro-15-N6506MV-N6506MV ; Similar to Peformance_Explore, but enables the physical optimization step (phys_opt_design) with the Explore directive after routing.", 1, "Off", 4, false); // ao (PAResourceEtoH.ExpRunTreePanel_EXP_RUN_TREE_TABLE)
+// PAPropertyPanels.initPanels (impl_1) elapsed time: 0.2s
+// HMemoryUtils.trashcanNow. Engine heap size: 2,070 MB. GUI used memory: 83 MB. Current time: 7/21/25, 6:10:08 AM UTC
+selectTreeTable(PAResourceEtoH.ExpRunTreePanel_EXP_RUN_TREE_TABLE, "synth_1 ; constrs_1 ; synth_design Complete! ;  ;  ;  ;  ;  ;  ;  ;  ;  ;  ;  ; 0 ; 0 ; 0.0 ; 0 ; 0 ; Mon Jul 21 06:06:38 UTC 2025 ; 00:00:24 ; Vivado Synthesis Defaults (Vivado Synthesis 2023) ; Vivado Synthesis Default Reports (Vivado Synthesis 2023) ; xc7z010clg225-1 ; sumin-ASUS-Vivobook-Pro-15-N6506MV-N6506MV ; Vivado Synthesis Defaults", 0, "Auto(Skipped)", 4, true); // ao (PAResourceEtoH.ExpRunTreePanel_EXP_RUN_TREE_TABLE) - Node
+// TclEventType: FILE_SET_CHANGE
+// TclEventType: DG_GRAPH_STALE
+// Tcl Message: update_compile_order -fileset sources_1 
+selectTreeTable(PAResourceEtoH.ExpRunTreePanel_EXP_RUN_TREE_TABLE, "impl_1 ; constrs_1 ; write_bitstream Complete! ; -5.118328094482422 ; -5.118328094482422 ; 0.049197424203157425 ; 0.0 ;  ; 0.0 ; 1.7151098251342773 ; 0 ; 3 CW, 29 Warn ;  ;  ; 5426 ; 6497 ; 30.5 ; 0 ; 18 ; Mon Jul 21 06:07:14 UTC 2025 ; 00:01:18 ; Performance_ExplorePostRoutePhysOpt (Vivado Implementation 2023) ; Vivado Implementation Default Reports (Vivado Implementation 2023) ; xc7z010clg225-1 ; sumin-ASUS-Vivobook-Pro-15-N6506MV-N6506MV ; Similar to Peformance_Explore, but enables the physical optimization step (phys_opt_design) with the Explore directive after routing.", 1, "Off", 4, false); // ao (PAResourceEtoH.ExpRunTreePanel_EXP_RUN_TREE_TABLE)
+// [GUI Memory]: 160 MB (+3178kb) [00:00:30]
+// Elapsed time: 14 seconds
+selectTree(PAResourceEtoH.FlowNavigatorTreePanel_FLOW_NAVIGATOR_TREE, "[, Implementation, Open Implemented Design]", 19, true); // f (PAResourceEtoH.FlowNavigatorTreePanel_FLOW_NAVIGATOR_TREE, Flow Navigator Tree) - Node
+// Run Command: PAResourceCommand.PACommandNames_GOTO_IMPLEMENTED_DESIGN
+// Tcl Message: open_run impl_1 
+// HMemoryUtils.trashcanNow. Engine heap size: 2,493 MB. GUI used memory: 84 MB. Current time: 7/21/25, 6:10:28 AM UTC
+// TclEventType: SDC_CONSTRAINT_ADD
+// TclEventType: POWER_CNS_STALE
+// TclEventType: POWER_REPORT_STALE
+// TclEventType: SDC_CONSTRAINT_ADD
+// TclEventType: POWER_REPORT_STALE
+// TclEventType: SDC_CONSTRAINT_ADD
+// TclEventType: POWER_REPORT_STALE
+// TclEventType: SDC_CONSTRAINT_ADD
+// TclEventType: FLOORPLAN_MODIFY
+// TclEventType: DESIGN_NEW
+// HMemoryUtils.trashcanNow. Engine heap size: 2,994 MB. GUI used memory: 84 MB. Current time: 7/21/25, 6:10:30 AM UTC
+// [Engine Memory]: 2,995 MB (+801567kb) [00:00:50]
+// TclEventType: DESIGN_NEW
+// [Engine Memory]: 3,180 MB (+36657kb) [00:00:51]
+// TclEventType: HFED_INIT_ROUTE_STORAGE_COMPLETED
+// [GUI Memory]: 171 MB (+2268kb) [00:00:51]
+// DeviceView Instantiated
+// WARNING: HEventQueue.dispatchEvent() is taking  1263 ms.
+// TclEventType: CURR_DESIGN_SET
+// Tcl Message: INFO: [Device 21-403] Loading part xc7z010clg225-1 
+// Tcl Message: Netlist sorting complete. Time (s): cpu = 00:00:00.07 ; elapsed = 00:00:00.07 . Memory (MB): peak = 8339.188 ; gain = 0.000 ; free physical = 8675 ; free virtual = 18499 
+// Tcl Message: INFO: [Netlist 29-17] Analyzing 564 Unisim elements for replacement INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds INFO: [Project 1-479] Netlist was created with Vivado 2023.2 INFO: [Project 1-570] Preparing netlist for logic optimization 
+// Tcl Message: Read ShapeDB Complete: Time (s): cpu = 00:00:00.02 ; elapsed = 00:00:00.02 . Memory (MB): peak = 8427.844 ; gain = 2.000 ; free physical = 8568 ; free virtual = 18394 
+// Tcl Message: INFO: [Timing 38-478] Restoring timing data from binary archive. INFO: [Timing 38-479] Binary timing data restore complete. INFO: [Project 1-856] Restoring constraints from binary archive. INFO: [Project 1-853] Binary constraint restore complete. INFO: [Designutils 20-5722] Start Reading Physical Databases. 
+// Tcl Message: Reading placement. 
+// Tcl Message: Read Netlist Cache: Time (s): cpu = 00:00:00.01 ; elapsed = 00:00:00.01 . Memory (MB): peak = 8984.312 ; gain = 0.000 ; free physical = 8069 ; free virtual = 17900 
+// Tcl Message: Reading placer database... 
+// Tcl Message: Read Device Cache: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.01 . Memory (MB): peak = 8984.312 ; gain = 0.000 ; free physical = 8065 ; free virtual = 17896 Read PlaceDB: Time (s): cpu = 00:00:00.25 ; elapsed = 00:00:00.24 . Memory (MB): peak = 8985.312 ; gain = 1.000 ; free physical = 8033 ; free virtual = 17864 Read PulsedLatchDB: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 8985.312 ; gain = 0.000 ; free physical = 8033 ; free virtual = 17864 
+// Tcl Message: Reading routing. 
+// Tcl Message: Read RouteStorage: Time (s): cpu = 00:00:00.12 ; elapsed = 00:00:00.12 . Memory (MB): peak = 8988.312 ; gain = 3.000 ; free physical = 8032 ; free virtual = 17863 Read Physdb Files: Time (s): cpu = 00:00:00.39 ; elapsed = 00:00:00.39 . Memory (MB): peak = 8988.312 ; gain = 4.000 ; free physical = 8032 ; free virtual = 17863 
+// Tcl Message: Restored from archive | CPU: 0.390000 secs | Memory: 14.473373 MB | 
+// Tcl Message: Finished XDEF File Restore: Time (s): cpu = 00:00:00.39 ; elapsed = 00:00:00.39 . Memory (MB): peak = 8988.312 ; gain = 4.000 ; free physical = 8032 ; free virtual = 17863 Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 8988.312 ; gain = 0.000 ; free physical = 8032 ; free virtual = 17863 
+// Tcl Message: INFO: [Project 1-111] Unisim Transformation Summary:   A total of 14 instances were transformed.   IOBUF => IOBUF (IBUF, OBUFT): 14 instances  
+// TclEventType: DRC_ADDED
+// Device view-level: 0.0
+// RouteApi: Init Delay Mediator Swing Worker Finished
+// Tcl Message: open_run: Time (s): cpu = 00:00:15 ; elapsed = 00:00:08 . Memory (MB): peak = 9352.652 ; gain = 1022.027 ; free physical = 7799 ; free virtual = 17640 
+// TclEventType: DRC_ADDED
+// TclEventType: METHODOLOGY_ADDED
+// TclEventType: POWER_UPDATED
+// [GUI Memory]: 180 MB (+811kb) [00:00:53]
+// [GUI Memory]: 190 MB (+1026kb) [00:00:53]
+// [GUI Memory]: 202 MB (+2469kb) [00:00:54]
+// WARNING: HEventQueue.dispatchEvent() is taking  1406 ms.
+// TclEventType: TIMING_SUMMARY_UPDATED
+// WARNING: HEventQueue.dispatchEvent() is taking  1190 ms.
+// [Engine Memory]: 3,695 MB (+374092kb) [00:00:55]
+// 'dB' command handler elapsed time: 13 seconds
+// Elapsed time: 13 seconds
+dismissDialog("Open Implemented Design"); // bq (Open Implemented Design Progress)
+selectList(PAResourceAtoD.CmdMsgDialog_MESSAGES, "[Timing 38-282] The design failed to meet the timing requirements. Please see the timing summary report for details on the timing violations.", 0); // b (PAResourceAtoD.CmdMsgDialog_MESSAGES)
+selectList(PAResourceAtoD.CmdMsgDialog_MESSAGES, "[Timing 38-282] The design failed to meet the timing requirements. Please see the timing summary report for details on the timing violations.", 0); // b (PAResourceAtoD.CmdMsgDialog_MESSAGES)
+selectList(PAResourceAtoD.CmdMsgDialog_MESSAGES, "[Timing 38-282] The design failed to meet the timing requirements. Please see the timing summary report for details on the timing violations.", 0, false, false, false, false, true); // b (PAResourceAtoD.CmdMsgDialog_MESSAGES) - Double Click
+// Run Command: PAResourceCommand.PACommandNames_MESSAGE_WINDOW
+dismissDialog("Critical Messages"); // E (dialog0)
+// [GUI Memory]: 223 MB (+11436kb) [00:00:59]
+// [GUI Memory]: 241 MB (+7184kb) [00:00:59]
+selectButton(RDIResource.BaseDialog_OK, "OK"); // a (RDIResource.BaseDialog_OK)
+dismissDialog("Methodology Violations"); // aO (dialog1)
+selectTree(PAResourceItoN.MsgTreePanel_MESSAGE_VIEW_TREE, "[, Synthesis, Out-of-Context Module Runs, system, system_maia_sdr_0_synth_1, [Netlist 29-72] Incorrect value '12'b001111111110' specified for property 'init'. Expecting type 'binary' with possible values of '1'b0,1'b1'. The system will either use the default value or the property value will be dropped. Please verify your source files. [/hdl/plutosdr-fw/maia-sdr/maia-hdl/projects/pluto/pluto.gen/sources_1/bd/system/ipshared/a645/maia_sdr.v:27331]. ]", 6, true); // u.d (PAResourceItoN.MsgTreePanel_MESSAGE_VIEW_TREE) - Node
+selectTree(PAResourceItoN.MsgTreePanel_MESSAGE_VIEW_TREE, "[, Implementation, Route Design, [Route 35-39] The design did not meet timing requirements. Please run report_timing_summary for detailed reports.. Resolution: Verify that the timing was met or had small violations at all previous steps (synthesis, placement, power_opt, and phys_opt). Run report_timing_summary and analyze individual timing paths.. ]", 9, false); // u.d (PAResourceItoN.MsgTreePanel_MESSAGE_VIEW_TREE)
+selectTab((HResource) null, (HResource) null, "Timing", 8); // aa
+expandTree(PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE, "[Root, Check Timing]", 5); // a (PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE)
+collapseTree(PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE, "[Root, Check Timing]", 5); // a (PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE)
+selectTree(PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE, "[Root, Design Timing Summary]", 2, false); // a (PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE)
+selectTree(PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE, "[Root, Design Timing Summary]", 2, false); // a (PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE)
+selectTree(PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE, "[Root, Design Timing Summary]", 2, false, false, false, false, false, true); // a (PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE) - Double Click
+selectTree(PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE, "[Root, Other Path Groups]", 8, true); // a (PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE) - Node
+selectTable(PAResourceItoN.IntraClocksSectionPanel_INTRA_CLOCKS_SECTION_TABLE, "**async_default** ; clk_fpga_0 ; rx_clk ; rise - rise ; -5.118 ; -5.118 ; 1 ; 1 ; rise - rise ; 1.265 ; 0 ; 0 ; 1", 2, "clk_fpga_0", 1); // l.c.a (PAResourceItoN.IntraClocksSectionPanel_INTRA_CLOCKS_SECTION_TABLE)
+selectTable(PAResourceItoN.IntraClocksSectionPanel_INTRA_CLOCKS_SECTION_TABLE, "**async_default** ; clk_fpga_0 ; rx_clk ; rise - rise ; -5.118 ; -5.118 ; 1 ; 1 ; rise - rise ; 1.265 ; 0 ; 0 ; 1", 2, "clk_fpga_0", 1, false, false, false, false, true); // l.c.a (PAResourceItoN.IntraClocksSectionPanel_INTRA_CLOCKS_SECTION_TABLE) - Double Click
+selectTable(PAResourceItoN.IntraClocksSectionPanel_INTRA_CLOCKS_SECTION_TABLE, "**async_default** ; clk_fpga_0 ; rx_clk ; rise - rise ; -5.118 ; -5.118 ; 1 ; 1 ; rise - rise ; 1.265 ; 0 ; 0 ; 1", 2, "rx_clk", 2); // l.c.a (PAResourceItoN.IntraClocksSectionPanel_INTRA_CLOCKS_SECTION_TABLE)
+selectTable(PAResourceItoN.IntraClocksSectionPanel_INTRA_CLOCKS_SECTION_TABLE, "**async_default** ; clk_fpga_0 ; rx_clk ; rise - rise ; -5.118 ; -5.118 ; 1 ; 1 ; rise - rise ; 1.265 ; 0 ; 0 ; 1", 2, "rx_clk", 2, false, false, false, false, true); // l.c.a (PAResourceItoN.IntraClocksSectionPanel_INTRA_CLOCKS_SECTION_TABLE) - Double Click
+selectTable(PAResourceItoN.IntraClocksSectionPanel_INTRA_CLOCKS_SECTION_TABLE, "**async_default** ; clk_fpga_0 ; rx_clk ; rise - rise ; -5.118 ; -5.118 ; 1 ; 1 ; rise - rise ; 1.265 ; 0 ; 0 ; 1", 2, "rx_clk", 2); // l.c.a (PAResourceItoN.IntraClocksSectionPanel_INTRA_CLOCKS_SECTION_TABLE)
+selectTable(PAResourceItoN.IntraClocksSectionPanel_INTRA_CLOCKS_SECTION_TABLE, "**async_default** ; clk_fpga_0 ; rx_clk ; rise - rise ; -5.118 ; -5.118 ; 1 ; 1 ; rise - rise ; 1.265 ; 0 ; 0 ; 1", 2, "-5.118", 5); // l.c.a (PAResourceItoN.IntraClocksSectionPanel_INTRA_CLOCKS_SECTION_TABLE)
+selectTable(PAResourceItoN.IntraClocksSectionPanel_INTRA_CLOCKS_SECTION_TABLE, "**async_default** ; clk_fpga_0 ; rx_clk ; rise - rise ; -5.118 ; -5.118 ; 1 ; 1 ; rise - rise ; 1.265 ; 0 ; 0 ; 1", 2, "-5.118", 5); // l.c.a (PAResourceItoN.IntraClocksSectionPanel_INTRA_CLOCKS_SECTION_TABLE)
+selectTable(PAResourceItoN.IntraClocksSectionPanel_INTRA_CLOCKS_SECTION_TABLE, "**async_default** ; clk_fpga_0 ; rx_clk ; rise - rise ; -5.118 ; -5.118 ; 1 ; 1 ; rise - rise ; 1.265 ; 0 ; 0 ; 1", 2, "rx_clk", 2, false, false, false, true, false); // l.c.a (PAResourceItoN.IntraClocksSectionPanel_INTRA_CLOCKS_SECTION_TABLE) - Popup Trigger
+selectMenuItem(RDIResource.AbstractSelectableTablePanel_EXPORT_TO_SPREADSHEET, "Export to Spreadsheet..."); // ao (RDIResource.AbstractSelectableTablePanel_EXPORT_TO_SPREADSHEET)
+selectButton(RDIResource.BaseDialog_OK, "OK"); // a (RDIResource.BaseDialog_OK)
+selectButton("OptionPane.button", "OK"); // JButton (OptionPane.button)
+dismissDialog("Export Table to Spreadsheet"); // v (dialog2)
+// Elapsed time: 37 seconds
+expandTree(PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE, "[Root, Other Path Groups]", 8); // a (PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE)
+selectTree(PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE, "[Root, Other Path Groups, **async_default**]", 9, true); // a (PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE) - Node
+selectTree(PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE, "[Root, Other Path Groups, **async_default**, clk_fpga_0]", 12, true, false, false, false, false, true); // a (PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE) - Double Click - Node
+selectTree(PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE, "[Root, Other Path Groups, **async_default**, clk_fpga_0 to clk_out1_system_maia_sdr_clk_0]", 10, true); // a (PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE) - Node
+selectTree(PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE, "[Root, Other Path Groups, **async_default**, clk_fpga_0 to clk_out1_system_maia_sdr_clk_0]", 10, true, false, false, false, false, true); // a (PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE) - Double Click - Node
+selectTree(PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE, "[Root, Other Path Groups, **async_default**, clk_fpga_0 to clk_out1_system_maia_sdr_clk_0, Setup -1.462 ns]", 11, false); // a (PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE)
+// PAPropertyPanels.initPanels (Path 189) elapsed time: 0.2s
+selectTable(PAResourceTtoZ.TimingItemFlatTablePanel_TABLE, "Path 189 ; -1.462 ; 0 ; 7 ; i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C ; i_system_wrapper/system_i/maia_sdr/inst/txiq_cdc/fifo/fifo18e1/RST ; 3.959437 ; 0.45600003 ; 3.5034366 ; 2.0000002 ; clk_fpga_0 ; clk_out1_system_maia_sdr_clk_0 ;  ; 0.26314062", 0, "i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C", 4); // e.b (PAResourceTtoZ.TimingItemFlatTablePanel_TABLE)
+selectTable(PAResourceTtoZ.TimingItemFlatTablePanel_TABLE, "Path 189 ; -1.462 ; 0 ; 7 ; i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C ; i_system_wrapper/system_i/maia_sdr/inst/txiq_cdc/fifo/fifo18e1/RST ; 3.959437 ; 0.45600003 ; 3.5034366 ; 2.0000002 ; clk_fpga_0 ; clk_out1_system_maia_sdr_clk_0 ;  ; 0.26314062", 0, "i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C", 4, false, false, false, false, true); // e.b (PAResourceTtoZ.TimingItemFlatTablePanel_TABLE) - Double Click
+selectTable(PAResourceTtoZ.TimingItemFlatTablePanel_TABLE, "Path 189 ; -1.462 ; 0 ; 7 ; i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C ; i_system_wrapper/system_i/maia_sdr/inst/txiq_cdc/fifo/fifo18e1/RST ; 3.959437 ; 0.45600003 ; 3.5034366 ; 2.0000002 ; clk_fpga_0 ; clk_out1_system_maia_sdr_clk_0 ;  ; 0.26314062", 0, "i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C", 4); // e.b (PAResourceTtoZ.TimingItemFlatTablePanel_TABLE)
+selectTable(PAResourceOtoP.PathReportTableView_DESCRIPTION, "Path Type ; Recovery (Max at Slow Process Corner)", 5, "Recovery (Max at Slow Process Corner)", 1); // q (PAResourceOtoP.PathReportTableView_DESCRIPTION)
+selectTable(PAResourceOtoP.PathReportTableView_DESCRIPTION, "Source ; i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C   (rising edge-triggered cell FDSE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})", 2, "i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C   (rising edge-triggered cell FDSE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})", 1); // q (PAResourceOtoP.PathReportTableView_DESCRIPTION)
+selectTable(PAResourceOtoP.PathReportTableView_DESCRIPTION, "Destination ; i_system_wrapper/system_i/maia_sdr/inst/txiq_cdc/fifo/fifo18e1/RST   (recovery check against rising-edge clock clk_out1_system_maia_sdr_clk_0  {rise@0.000ns fall@8.000ns period=16.000ns})", 3, "i_system_wrapper/system_i/maia_sdr/inst/txiq_cdc/fifo/fifo18e1/RST   (recovery check against rising-edge clock clk_out1_system_maia_sdr_clk_0  {rise@0.000ns fall@8.000ns period=16.000ns})", 1); // q (PAResourceOtoP.PathReportTableView_DESCRIPTION)
+// [GUI Memory]: 258 MB (+4843kb) [00:02:23]
+selectTree(PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE, "[Root, Other Path Groups, **async_default**, clk_fpga_0 to rx_clk]", 13, true); // a (PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE) - Node
+expandTree(PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE, "[Root, Other Path Groups, **async_default**, clk_fpga_0 to rx_clk]", 13); // a (PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE)
+selectTree(PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE, "[Root, Other Path Groups, **async_default**, clk_fpga_0 to rx_clk, Setup -5.118 ns]", 14, false); // a (PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE)
+selectTree(PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE, "[Root, Other Path Groups, **async_default**, clk_fpga_0 to rx_clk, Setup -5.118 ns]", 14, false, false, false, false, false, true); // a (PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE) - Double Click
+selectTree(PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE, "[Root, Other Path Groups, **async_default**, clk_fpga_0 to rx_clk, Setup -5.118 ns]", 14, false); // a (PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE)
+selectTree(PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE, "[Root, Other Path Groups, **async_default**, clk_fpga_0 to rx_clk, Setup -5.118 ns]", 14, false); // a (PAResourceItoN.NavigableTimingReportTab_TIMING_REPORT_NAVIGATION_TREE)
+selectTable(PAResourceTtoZ.TimingItemFlatTablePanel_TABLE, "Path 191 ; -5.118 ; 0 ; 7 ; i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C ; i_system_wrapper/system_i/maia_sdr/inst/txiq_cdc/fifo/fifo18e1/RST ; 3.959437 ; 0.45600003 ; 3.5034366 ; 0.010913936 ; clk_fpga_0 ; rx_clk ;  ; 0.15411034", 0, "i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C", 4); // e.b (PAResourceTtoZ.TimingItemFlatTablePanel_TABLE)
+selectTable(PAResourceTtoZ.TimingItemFlatTablePanel_TABLE, "Path 191 ; -5.118 ; 0 ; 7 ; i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C ; i_system_wrapper/system_i/maia_sdr/inst/txiq_cdc/fifo/fifo18e1/RST ; 3.959437 ; 0.45600003 ; 3.5034366 ; 0.010913936 ; clk_fpga_0 ; rx_clk ;  ; 0.15411034", 0, "i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C", 4, false, false, false, false, true); // e.b (PAResourceTtoZ.TimingItemFlatTablePanel_TABLE) - Double Click
+selectTable(PAResourceTtoZ.TimingItemFlatTablePanel_TABLE, "Path 191 ; -5.118 ; 0 ; 7 ; i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C ; i_system_wrapper/system_i/maia_sdr/inst/txiq_cdc/fifo/fifo18e1/RST ; 3.959437 ; 0.45600003 ; 3.5034366 ; 0.010913936 ; clk_fpga_0 ; rx_clk ;  ; 0.15411034", 0, "i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C", 4); // e.b (PAResourceTtoZ.TimingItemFlatTablePanel_TABLE)
+selectTable(PAResourceOtoP.PathReportTableView_DESCRIPTION, "Destination ; i_system_wrapper/system_i/maia_sdr/inst/txiq_cdc/fifo/fifo18e1/RST   (recovery check against rising-edge clock rx_clk  {rise@0.000ns fall@8.135ns period=16.270ns})", 3, "i_system_wrapper/system_i/maia_sdr/inst/txiq_cdc/fifo/fifo18e1/RST   (recovery check against rising-edge clock rx_clk  {rise@0.000ns fall@8.135ns period=16.270ns})", 1); // q (PAResourceOtoP.PathReportTableView_DESCRIPTION)
+selectTable(PAResourceOtoP.PathReportTableView_DESCRIPTION, "Source ; i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C   (rising edge-triggered cell FDSE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})", 2, "i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C   (rising edge-triggered cell FDSE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})", 1); // q (PAResourceOtoP.PathReportTableView_DESCRIPTION)
+selectTable(PAResourceOtoP.PathReportTableView_DESCRIPTION, "Destination ; i_system_wrapper/system_i/maia_sdr/inst/txiq_cdc/fifo/fifo18e1/RST   (recovery check against rising-edge clock rx_clk  {rise@0.000ns fall@8.135ns period=16.270ns})", 3, "i_system_wrapper/system_i/maia_sdr/inst/txiq_cdc/fifo/fifo18e1/RST   (recovery check against rising-edge clock rx_clk  {rise@0.000ns fall@8.135ns period=16.270ns})", 1); // q (PAResourceOtoP.PathReportTableView_DESCRIPTION)
+selectTable(PAResourceOtoP.PathReportTableView_DESCRIPTION, "Source ; i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C   (rising edge-triggered cell FDSE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})", 2, "i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C   (rising edge-triggered cell FDSE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})", 1); // q (PAResourceOtoP.PathReportTableView_DESCRIPTION)
+selectTable(PAResourceOtoP.PathReportTableView_DESCRIPTION, "Slack ; -5.118ns", 1, "Slack", 0); // q (PAResourceOtoP.PathReportTableView_DESCRIPTION)
+// HMemoryUtils.trashcanNow. Engine heap size: 3,840 MB. GUI used memory: 165 MB. Current time: 7/21/25, 6:13:08 AM UTC
+// Elapsed time: 143 seconds
+selectTable(PAResourceTtoZ.TimingItemFlatTablePanel_TABLE, "Path 191 ; -5.118 ; 0 ; 7 ; i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C ; i_system_wrapper/system_i/maia_sdr/inst/txiq_cdc/fifo/fifo18e1/RST ; 3.959437 ; 0.45600003 ; 3.5034366 ; 0.010913936 ; clk_fpga_0 ; rx_clk ;  ; 0.15411034", 0, "i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C", 4); // e.b (PAResourceTtoZ.TimingItemFlatTablePanel_TABLE)
+selectTable(PAResourceOtoP.PathReportTableView_DESCRIPTION, "Source ; i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C   (rising edge-triggered cell FDSE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})", 2, "i_system_wrapper/system_i/maia_sdr/inst/control_registers/control/field_sdr_reset_reg/C   (rising edge-triggered cell FDSE clocked by clk_fpga_0  {rise@0.000ns fall@5.000ns period=10.000ns})", 1); // q (PAResourceOtoP.PathReportTableView_DESCRIPTION)
+selectTable(PAResourceOtoP.PathReportTableView_DESCRIPTION, "Destination ; i_system_wrapper/system_i/maia_sdr/inst/txiq_cdc/fifo/fifo18e1/RST   (recovery check against rising-edge clock rx_clk  {rise@0.000ns fall@8.135ns period=16.270ns})", 3, "i_system_wrapper/system_i/maia_sdr/inst/txiq_cdc/fifo/fifo18e1/RST   (recovery check against rising-edge clock rx_clk  {rise@0.000ns fall@8.135ns period=16.270ns})", 1); // q (PAResourceOtoP.PathReportTableView_DESCRIPTION)

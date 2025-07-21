@@ -2,7 +2,8 @@
 
 from amaranth import *
 from .fifo import AsyncFifo18_36
-
+import amaranth.back.verilog
+from amaranth.lib.cdc import FFSynchronizer, PulseSynchronizer
 class TxIQCDC(Elaboratable):
     """
     TX IQ 데이터 전송을 위한 CDC 모듈.
@@ -31,6 +32,10 @@ class TxIQCDC(Elaboratable):
         m = Module()
         m.submodules.fifo = fifo = AsyncFifo18_36(
             r_domain=self._o_domain, w_domain=self._i_domain)
+
+        reset_i = Signal()
+        m.submodules.sync_reset = FFSynchronizer(
+            self.reset, reset_i, o_domain=self._i_domain, init=1)
 
         # --- 쓰기 측 ('sync' 도메인) ---
         m.d.comb += [

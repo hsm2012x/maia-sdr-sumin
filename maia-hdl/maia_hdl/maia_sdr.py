@@ -322,7 +322,7 @@ class MaiaSDR(Elaboratable):
             'sync', 'clk2x', 2)
         m.submodules.common_edge_3x = common_edge_3x = ClkNxCommonEdge(
             'sync', 'clk3x', 3)
-
+        m.submodules.lfm_registers = self.lfm_registers
         # RX IQ CDC
         m.submodules.rxiq_cdc = rxiq_cdc = RxIQCDC(
             'sampling', 'sync', self.iq_in_width)
@@ -442,7 +442,8 @@ class MaiaSDR(Elaboratable):
         m.d.s_axi_lite += [
             self.axi4lite.rdata.eq(self.control_registers.rdata
                                    | self.recorder_registers.rdata
-                                   | sdr_registers_cdc.i_rdata),
+                                   | sdr_registers_cdc.i_rdata
+                                   | self.lfm_registers.rdata),
             self.axi4lite.rdone.eq(self.control_registers.rdone
                                    | self.recorder_registers.rdone
                                    | sdr_registers_cdc.i_rdone),
@@ -463,6 +464,10 @@ class MaiaSDR(Elaboratable):
                 Mux(sdr_regs_select, self.axi4lite.wstrobe, 0)),
             address.eq(self.axi4lite.address),
             wdata.eq(self.axi4lite.wdata),
+
+            self.lfm_registers.ren.eq(self.axi4lite.ren & lfm_regs_select),
+            self.lfm_registers.wstrobe.eq(Mux(lfm_regs_select, self.axi4lite.wstrobe, 0)),
+
         ]
         m.d.comb += [
             self.control_registers.address.eq(address),
@@ -471,6 +476,9 @@ class MaiaSDR(Elaboratable):
             self.recorder_registers.wdata.eq(wdata),
             sdr_registers_cdc.i_address.eq(address),
             sdr_registers_cdc.i_wdata.eq(wdata),
+
+            self.lfm_registers.address.eq(address[0:5]), # LFM 주소 폭에 맞게 슬라이싱
+            self.lfm_registers.wdata.eq(wdata),
         ]
 
         # Registers sync domain
@@ -486,14 +494,19 @@ class MaiaSDR(Elaboratable):
         # internal resets
         # We use FFSynchronizer rather than ResetSynchronizer because of
         # https://github.com/amaranth-lang/amaranth/issues/721
+        #for 루프: sync, clk2x 등 모든 내부 클럭 도메인에 대해 반복
+        # 
         for internal in ['sync', 'clk2x', 'clk3x', 'sampling']:
             setattr(m.submodules, f'{internal}_rst', FFSynchronizer(
                 self.control_registers['control']['sdr_reset'],
                 ResetSignal(internal), o_domain=internal,
                 init=1))
+        
         m.d.comb += rxiq_cdc.reset.eq(
             self.control_registers['control']['sdr_reset'])
 
+
+        m.d.comb += self.txiq_cdc.reset.eq(self.control_registers['control']['sdr_reset'])
         # Interrupts (s_axi_lite domain)
         interrupts_reg = self.control_registers['interrupts']
         m.d.comb += [
@@ -503,14 +516,6 @@ class MaiaSDR(Elaboratable):
         ]
 
         #
-         # --- LFM 모듈과 LFM 레지스터 블록 연결 ---
-        m.d.comb += [
-            self.lfm.reg_addr.eq(self.lfm_registers.address),
-            self.lfm.reg_wdata.eq(self.lfm_registers.wdata),
-            self.lfm.reg_wstrobe.eq(self.lfm_registers.wstrobe),
-            self.lfm_registers.rdata.eq(self.lfm.reg_rdata),
-        ]
-
 
         # --- LFM(생산자)과 TxIQCDC(FIFO) 연결 ---
         m.d.comb += [
@@ -522,16 +527,12 @@ class MaiaSDR(Elaboratable):
         # --- TxIQCDC(FIFO)와 외부 DAC 포트 연결 ---
         m.d.comb += [
             # TxIQCDC의 출력을 MaiaSDR의 최종 출력 포트로 연결
-            self.tx_re_out.eq(self.txiq_cdc.re_out),
-            self.tx_im_out.eq(self.txiq_cdc.im_out),
-            #self.tx_valid_out.eq(self.txiq_cdc.valid_out),
-            # 외부 axi_ad9361의 valid 신호(MaiaSDR 입장에서는 ready)를
-            # TxIQCDC의 읽기 요청 신호로 연결
+            self.tx_re_out.eq(self.txiq_cdc.re_out << 4),
+            self.tx_im_out.eq(self.txiq_cdc.im_out << 4),
             self.txiq_cdc.r_en.eq(self.dac_valid_in),
         ]
 
-        m.d.comb += self.txiq_cdc.reset.eq(
-            self.control_registers['control']['sdr_reset'])
+        
         
         return m
 
