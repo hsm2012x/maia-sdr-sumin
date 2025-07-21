@@ -178,8 +178,8 @@ class RxIQCDC(Elaboratable):
         Output imaginary part.
     """
     def __init__(self, i_domain: str, o_domain: str, width: int):
-        self._i_domain = i_domain
-        self._o_domain = o_domain
+        self._i_domain = i_domain # sampling
+        self._o_domain = o_domain # sync
         self.w = width
         if self.w > 18:
             raise ValueError('width > 18 not supported')

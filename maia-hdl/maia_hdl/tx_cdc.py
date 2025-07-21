@@ -6,7 +6,7 @@ from .fifo import AsyncFifo18_36
 class TxIQCDC(Elaboratable):
     """
     TX IQ 데이터 전송을 위한 CDC 모듈.
-    LFM('sync' 도메인)에서 DAC('dac'/'sampling' 도메인)로 데이터를 전달합니다.
+    LFM('sync' 도메인)에서 DAC('dac'/'sampling' 도메인)로 데이터를 전달
     """
     def __init__(self, i_domain: str, o_domain: str, width: int = 12):
         self._i_domain = i_domain
@@ -43,8 +43,8 @@ class TxIQCDC(Elaboratable):
         m.d.comb += [
             self.re_out.eq(fifo.data_out[:self.w]),
             self.im_out.eq(fifo.data_out[self.w:]),
-            fifo.rden.eq(self.r_en),
-            self.almost_empty.eq(fifo.empty) # 편의를 위해 empty 신호를 출력
+            fifo.rden.eq(self.r_en & ~fifo.empty),
+            self.almost_empty.eq(fifo.empty)
         ]
 
         m.d.comb += fifo.reset.eq(self.reset)
