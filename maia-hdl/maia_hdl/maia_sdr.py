@@ -104,7 +104,7 @@ class MaiaSDR(Elaboratable):
             dma_name='m_axi_recorder', domain_in='sync',
             domain_dma='s_axi_lite')
         self.ddc = DDC('clk3x')
-        self.txiq_cdc = TxIQCDC(i_domain="sync", o_domain="sampling", width=12) # <<< txiq_cdc 인스턴스화
+        
 
 
         self.sdr_registers = Registers(
@@ -238,7 +238,7 @@ class MaiaSDR(Elaboratable):
                      Field('running', Access.R, 1, 0),
                 ]),
                 0x8: Register('lfm_config_1', [ # 32비트 단위로 레지스터 분리
-                    Field('tw_min', Access.RW, 32, -143165577),
+                    Field('tw_min', Access.RW, 32, 1),
                 ]),
                 0xC: Register('lfm_config_2', [
                     Field('tw_max', Access.RW, 32, 143165577),
@@ -329,7 +329,7 @@ class MaiaSDR(Elaboratable):
         m.d.comb += [rxiq_cdc.re_in.eq(self.re_in),
                      rxiq_cdc.im_in.eq(self.im_in)]
         m.submodules.lfm = self.lfm
-        m.submodules.txiq_cdc = self.txiq_cdc
+        m.submodules.txiq_cdc = txiq_cdc = TxIQCDC(i_domain="sync", o_domain="sampling", width=12) # <<< txiq_cdc 인스턴스화
 
         # Spectrometer (sync domain)
         spectrometer_re_in = Signal(
@@ -506,7 +506,17 @@ class MaiaSDR(Elaboratable):
             self.control_registers['control']['sdr_reset'])
 
 
-        m.d.comb += self.txiq_cdc.reset.eq(self.control_registers['control']['sdr_reset'])
+        #m.d.comb += txiq_cdc.reset_i.eq(self.control_registers['control']['sdr_reset'])
+
+        sdr_reset_signal = self.control_registers['control']['sdr_reset']
+        sdr_reset_sync = Signal()
+        
+        # 3. FFSynchronizer를 사용하여 sdr_reset_signal을 'sync' 도메인으로 안전하게 동기화
+        m.submodules.tx_rst_sync = FFSynchronizer(sdr_reset_signal, sdr_reset_sync,
+                                                  o_domain="sync", init=1)
+        
+        # 4. 'sync' 도메인으로 안전하게 넘어온 리셋 신호를 TxIQCDC에 연결
+        m.d.comb += txiq_cdc.sdr_reset_sync.eq(sdr_reset_sync)
         # Interrupts (s_axi_lite domain)
         interrupts_reg = self.control_registers['interrupts']
         m.d.comb += [
@@ -519,17 +529,17 @@ class MaiaSDR(Elaboratable):
 
         # --- LFM(생산자)과 TxIQCDC(FIFO) 연결 ---
         m.d.comb += [
-            self.txiq_cdc.re_in.eq(self.lfm.dac_data_i),
-            self.txiq_cdc.im_in.eq(self.lfm.dac_data_q),
-            self.txiq_cdc.w_en.eq(self.lfm.valid_out),
-            self.lfm.ready_in.eq(self.txiq_cdc.w_rdy),
+            txiq_cdc.re_in.eq(self.lfm.dac_data_i),
+            txiq_cdc.im_in.eq(self.lfm.dac_data_q),
+            txiq_cdc.w_en.eq(self.lfm.valid_out),
+            self.lfm.ready_in.eq(txiq_cdc.w_rdy),
         ]
         # --- TxIQCDC(FIFO)와 외부 DAC 포트 연결 ---
         m.d.comb += [
             # TxIQCDC의 출력을 MaiaSDR의 최종 출력 포트로 연결
-            self.tx_re_out.eq(self.txiq_cdc.re_out << 4),
-            self.tx_im_out.eq(self.txiq_cdc.im_out << 4),
-            self.txiq_cdc.r_en.eq(self.dac_valid_in),
+            self.tx_re_out.eq(txiq_cdc.re_out << 4),
+            self.tx_im_out.eq(txiq_cdc.im_out << 4),
+            txiq_cdc.r_en.eq(self.dac_valid_in),
         ]
 
         

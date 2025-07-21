@@ -10,8 +10,8 @@ class TxIQCDC(Elaboratable):
     LFM('sync' 도메인)에서 DAC('dac'/'sampling' 도메인)로 데이터를 전달
     """
     def __init__(self, i_domain: str, o_domain: str, width: int = 12):
-        self._i_domain = i_domain
-        self._o_domain = o_domain
+        self._i_domain = i_domain # sync
+        self._o_domain = o_domain # sampling
         self.w = width
 
         # --- 쓰기 측 포트 (LFM이 사용) ---
@@ -25,7 +25,8 @@ class TxIQCDC(Elaboratable):
         self.im_out = Signal(signed(width))
         self.r_en = Signal()      # axi_ad9361이 "데이터를 달라"고 요청하는 신호
         
-        self.reset = Signal()
+        self.sdr_reset_sync = Signal()
+       
         self.almost_empty = Signal() # FIFO가 거의 비었음을 알리는 플래그
 
     def elaborate(self, platform):
@@ -33,9 +34,9 @@ class TxIQCDC(Elaboratable):
         m.submodules.fifo = fifo = AsyncFifo18_36(
             r_domain=self._o_domain, w_domain=self._i_domain)
 
-        reset_i = Signal()
-        m.submodules.sync_reset = FFSynchronizer(
-            self.reset, reset_i, o_domain=self._i_domain, init=1)
+        #reset_o = Signal()
+        #m.submodules.sync_reset = FFSynchronizer(
+        #    self.reset_i, reset_o, o_domain=self._o_domain, init=1)
 
         # --- 쓰기 측 ('sync' 도메인) ---
         m.d.comb += [
@@ -52,5 +53,5 @@ class TxIQCDC(Elaboratable):
             self.almost_empty.eq(fifo.empty)
         ]
 
-        m.d.comb += fifo.reset.eq(self.reset)
+        m.d.comb += fifo.reset.eq(self.sdr_reset_sync)
         return m
