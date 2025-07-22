@@ -508,15 +508,8 @@ class MaiaSDR(Elaboratable):
 
         #m.d.comb += txiq_cdc.reset_i.eq(self.control_registers['control']['sdr_reset'])
 
-        sdr_reset_signal = self.control_registers['control']['sdr_reset']
-        sdr_reset_sync = Signal()
-        
-        # 3. FFSynchronizer를 사용하여 sdr_reset_signal을 'sync' 도메인으로 안전하게 동기화
-        m.submodules.tx_rst_sync = FFSynchronizer(sdr_reset_signal, sdr_reset_sync,
-                                                  o_domain="sync", init=1)
-        
-        # 4. 'sync' 도메인으로 안전하게 넘어온 리셋 신호를 TxIQCDC에 연결
-        m.d.comb += txiq_cdc.sdr_reset_sync.eq(sdr_reset_sync)
+        m.d.comb += txiq_cdc.reset_in.eq(
+            self.control_registers['control']['sdr_reset'])
         # Interrupts (s_axi_lite domain)
         interrupts_reg = self.control_registers['interrupts']
         m.d.comb += [

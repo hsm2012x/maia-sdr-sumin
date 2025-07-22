@@ -25,7 +25,8 @@ class TxIQCDC(Elaboratable):
         self.im_out = Signal(signed(width))
         self.r_en = Signal()      # axi_ad9361이 "데이터를 달라"고 요청하는 신호
         
-        self.sdr_reset_sync = Signal()
+        # 외부에서 비동기 리셋을 받을 단일 포트
+        self.reset_in = Signal()
        
         self.almost_empty = Signal() # FIFO가 거의 비었음을 알리는 플래그
 
@@ -34,6 +35,14 @@ class TxIQCDC(Elaboratable):
         m.submodules.fifo = fifo = AsyncFifo18_36(
             r_domain=self._o_domain, w_domain=self._i_domain)
 
+        reset_w = Signal()
+        m.submodules.sync_reset_w = FFSynchronizer(
+            self.reset_in, reset_w, o_domain=self._i_domain, init=1)
+
+        # 2. 읽기(o_domain)측을 위한 동기화된 리셋 생성
+        reset_r = Signal()
+        m.submodules.sync_reset_r = FFSynchronizer(
+            self.reset_in, reset_r, o_domain=self._o_domain, init=1)
         #reset_o = Signal()
         #m.submodules.sync_reset = FFSynchronizer(
         #    self.reset_i, reset_o, o_domain=self._o_domain, init=1)
@@ -41,7 +50,7 @@ class TxIQCDC(Elaboratable):
         # --- 쓰기 측 ('sync' 도메인) ---
         m.d.comb += [
             fifo.data_in.eq(Cat(self.re_in, self.im_in)),
-            fifo.wren.eq(self.w_en & self.w_rdy),
+            fifo.wren.eq(self.w_en & self.w_rdy & ~reset_w),
             self.w_rdy.eq(~fifo.full),
         ]
         
@@ -49,9 +58,11 @@ class TxIQCDC(Elaboratable):
         m.d.comb += [
             self.re_out.eq(fifo.data_out[:self.w]),
             self.im_out.eq(fifo.data_out[self.w:]),
-            fifo.rden.eq(self.r_en & ~fifo.empty),
+            #fifo.rden.eq(self.r_en & ~fifo.empty),
+            fifo.rden.eq(self.r_en & ~fifo.empty & ~reset_r),
             self.almost_empty.eq(fifo.empty)
         ]
 
-        m.d.comb += fifo.reset.eq(self.sdr_reset_sync)
+        #m.d.comb += fifo.reset.eq(self.sdr_reset_sync)
+        m.d.comb += fifo.reset.eq(self.reset_in)
         return m
