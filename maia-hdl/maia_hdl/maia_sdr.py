@@ -24,7 +24,7 @@ from .register import Access, Field, Registers, Register, RegisterMap
 from .recorder import Recorder16IQ, RecorderMode
 from .spectrometer import Spectrometer
 
-from .lfm import LFM
+
 from .tx_cdc import TxIQCDC
 # IP core version
 _version = '0.6.2'
@@ -210,12 +210,8 @@ class MaiaSDR(Elaboratable):
                               1,
                               0),
                     ]),
-                    0b110:Register('tx_control', [
-                        Field('source_select', Access.RW, 2, 1), # 0=DDS, 1=LFM
-                        Field('start_1sec_pulse', Access.Wpulse, 1, 0)
-                    ]),
-            }, 4)
-        self.lfm = LFM(clk_freq=SYNC_CLK_FREQ)
+            }, 3)
+        
 
 
         metadata = {
@@ -228,31 +224,12 @@ class MaiaSDR(Elaboratable):
             'licenseText': ('SPDX-License-Identifier: MIT '
                             'Copyright (C) Daniel Estevez 2022-2024'),
         }
-        self.lfm_registers = Registers(
-            'lfm', {
-                0x0: Register('lfm_control', [
-                    Field('start_continuous', Access.Wpulse, 1, 0),
-                    Field('stop_continuous', Access.Wpulse, 1, 0),
-                ]),
-                0x4: Register('lfm_status', [
-                     Field('running', Access.R, 1, 0),
-                ]),
-                0x8: Register('lfm_config_1', [ # 32비트 단위로 레지스터 분리
-                    Field('tw_min', Access.RW, 32, 1),
-                ]),
-                0xC: Register('lfm_config_2', [
-                    Field('tw_max', Access.RW, 32, 143165577),
-                ]),
-                0x10: Register('lfm_config_3', [
-                    Field('chirp_step', Access.RW, 32, 9544),
-                ]),
-            }, 5)
+       
         
         self.register_map = RegisterMap({
             0x0: self.control_registers,
             0x10: self.recorder_registers,
             0x20: self.sdr_registers,
-            0x40: self.lfm_registers,
         }, metadata)
         
         self.iq_in_width = 12
@@ -322,13 +299,11 @@ class MaiaSDR(Elaboratable):
             'sync', 'clk2x', 2)
         m.submodules.common_edge_3x = common_edge_3x = ClkNxCommonEdge(
             'sync', 'clk3x', 3)
-        m.submodules.lfm_registers = self.lfm_registers
-        # RX IQ CDC
         m.submodules.rxiq_cdc = rxiq_cdc = RxIQCDC(
             'sampling', 'sync', self.iq_in_width)
         m.d.comb += [rxiq_cdc.re_in.eq(self.re_in),
                      rxiq_cdc.im_in.eq(self.im_in)]
-        m.submodules.lfm = self.lfm
+        
         m.submodules.txiq_cdc = txiq_cdc = TxIQCDC(i_domain="sync", o_domain="sampling", width=12) # <<< txiq_cdc 인스턴스화
 
         # Spectrometer (sync domain)
@@ -442,8 +417,7 @@ class MaiaSDR(Elaboratable):
         m.d.s_axi_lite += [
             self.axi4lite.rdata.eq(self.control_registers.rdata
                                    | self.recorder_registers.rdata
-                                   | sdr_registers_cdc.i_rdata
-                                   | self.lfm_registers.rdata),
+                                   | sdr_registers_cdc.i_rdata),
             self.axi4lite.rdone.eq(self.control_registers.rdone
                                    | self.recorder_registers.rdone
                                    | sdr_registers_cdc.i_rdone),
@@ -465,9 +439,6 @@ class MaiaSDR(Elaboratable):
             address.eq(self.axi4lite.address),
             wdata.eq(self.axi4lite.wdata),
 
-            self.lfm_registers.ren.eq(self.axi4lite.ren & lfm_regs_select),
-            self.lfm_registers.wstrobe.eq(Mux(lfm_regs_select, self.axi4lite.wstrobe, 0)),
-
         ]
         m.d.comb += [
             self.control_registers.address.eq(address),
@@ -477,8 +448,6 @@ class MaiaSDR(Elaboratable):
             sdr_registers_cdc.i_address.eq(address),
             sdr_registers_cdc.i_wdata.eq(wdata),
 
-            self.lfm_registers.address.eq(address[0:5]), # LFM 주소 폭에 맞게 슬라이싱
-            self.lfm_registers.wdata.eq(wdata),
         ]
 
         # Registers sync domain
@@ -518,15 +487,16 @@ class MaiaSDR(Elaboratable):
             interrupts_reg['recorder'].eq(self.recorder.finished),
         ]
 
-        #
-
-        # --- LFM(생산자)과 TxIQCDC(FIFO) 연결 ---
+        # RxIQCDC의 출력을 TxIQCDC의 입력으로 직접 연결
         m.d.comb += [
-            txiq_cdc.re_in.eq(self.lfm.dac_data_i),
-            txiq_cdc.im_in.eq(self.lfm.dac_data_q),
-            txiq_cdc.w_en.eq(self.lfm.valid_out),
-            self.lfm.ready_in.eq(txiq_cdc.w_rdy),
+            # 데이터 버스 연결
+            txiq_cdc.re_in.eq(rxiq_cdc.re_out),
+            txiq_cdc.im_in.eq(rxiq_cdc.im_out),
+            # 핸드셰이크 연결
+            txiq_cdc.w_en.eq(rxiq_cdc.strobe_out),
+
         ]
+        # --- LFM(생산자)과 TxIQCDC(FIFO) 연결 ---
         # --- TxIQCDC(FIFO)와 외부 DAC 포트 연결 ---
         m.d.comb += [
             # TxIQCDC의 출력을 MaiaSDR의 최종 출력 포트로 연결
@@ -534,8 +504,6 @@ class MaiaSDR(Elaboratable):
             self.tx_im_out.eq(txiq_cdc.im_out << 4),
             txiq_cdc.r_en.eq(self.dac_valid_in),
         ]
-
-        
         
         return m
 
