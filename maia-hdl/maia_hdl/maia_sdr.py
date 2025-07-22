@@ -475,7 +475,6 @@ class MaiaSDR(Elaboratable):
             self.control_registers['control']['sdr_reset'])
 
 
-        #m.d.comb += txiq_cdc.reset_i.eq(self.control_registers['control']['sdr_reset'])
 
         m.d.comb += txiq_cdc.reset_in.eq(
             self.control_registers['control']['sdr_reset'])

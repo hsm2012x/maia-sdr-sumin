@@ -43,9 +43,7 @@ class TxIQCDC(Elaboratable):
         reset_r = Signal()
         m.submodules.sync_reset_r = FFSynchronizer(
             self.reset_in, reset_r, o_domain=self._o_domain, init=1)
-        #reset_o = Signal()
-        #m.submodules.sync_reset = FFSynchronizer(
-        #    self.reset_i, reset_o, o_domain=self._o_domain, init=1)
+
 
         # --- 쓰기 측 ('sync' 도메인) ---
         m.d.comb += [
@@ -58,11 +56,10 @@ class TxIQCDC(Elaboratable):
         m.d.comb += [
             self.re_out.eq(fifo.data_out[:self.w]),
             self.im_out.eq(fifo.data_out[self.w:]),
-            #fifo.rden.eq(self.r_en & ~fifo.empty),
             fifo.rden.eq(self.r_en & ~fifo.empty & ~reset_r),
             self.almost_empty.eq(fifo.empty)
         ]
-
+        m.d.comb += fifo.reset.eq(reset_w)
         #m.d.comb += fifo.reset.eq(self.sdr_reset_sync)
-        m.d.comb += fifo.reset.eq(self.reset_in)
+        #m.d.comb += fifo.reset.eq(self.reset_in)
         return m

@@ -200,7 +200,7 @@ ad_ip_parameter axi_ad9361 CONFIG.TDD_DISABLE 1
 ad_ip_parameter axi_ad9361 CONFIG.DAC_DDS_DISABLE 1
 
 # sumin add
-ad_ip_parameter axi_ad9361 CONFIG.DAC_USERPORTS_DISABLE 0
+ad_ip_parameter axi_ad9361 CONFIG.DAC_USERPORTS_DISABLE 1
 ad_ip_parameter axi_ad9361 CONFIG.DAC_IQCORRECTION_DISABLE 0
 
 # Maia SDR core
