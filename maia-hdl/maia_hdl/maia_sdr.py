@@ -232,14 +232,16 @@ class MaiaSDR(Elaboratable):
        
         self.lfm_registers = Registers(
             'lfm', {
-
+                # 제어 레지스터
                 0x0: Register('lfm_control', [
                     Field('start_continuous', Access.Wpulse, 1, 0),
                     Field('stop_continuous', Access.Wpulse, 1, 0),
                 ]),
+                # 상태 레지스터
                 0x4: Register('lfm_status', [
                      Field('running', Access.R, 1, 0),
                 ]),
+                # 설정 레지스터 
                 0x8: Register('lfm_config_1', [ # 32비트 단위로 레지스터 분리
                     Field('tw_min', Access.RW, 32, 1),
                 ]),
