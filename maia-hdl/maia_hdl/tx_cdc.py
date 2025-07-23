@@ -59,7 +59,7 @@ class TxIQCDC(Elaboratable):
             fifo.rden.eq(self.r_en & ~fifo.empty & ~reset_r),
             self.almost_empty.eq(fifo.empty)
         ]
-        m.d.comb += fifo.reset.eq(reset_w)
+        m.d.comb += fifo.reset.eq(self.reset_in)
         #m.d.comb += fifo.reset.eq(self.sdr_reset_sync)
         #m.d.comb += fifo.reset.eq(self.reset_in)
         return m
