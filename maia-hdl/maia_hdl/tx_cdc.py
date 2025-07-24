@@ -1,65 +1,98 @@
-# tx_cdc.py 최종 수정안
-
 from amaranth import *
-from .fifo import AsyncFifo18_36
 import amaranth.back.verilog
 from amaranth.lib.cdc import FFSynchronizer, PulseSynchronizer
-class TxIQCDC(Elaboratable):
+
+from .fifo import AsyncFifo18_36
+
+class TxDUMP(Elaboratable):
     """
-    TX IQ 데이터 전송을 위한 CDC 모듈.
-    LFM('sync' 도메인)에서 DAC('dac'/'sampling' 도메인)로 데이터를 전달
+    Parameters
+    ----------
+    i_domain : str
+        Input clock domain.
+    o_domain : str
+        Output clock domain.
+    width : int
+        Data width.
+
+    Attributes
+    ----------
+    re_in : Signal(width), in
+        Input real part.
+    im_in : Signal(width), in
+        Input imaginary part.
+    reset : Signal(), in
+        FIFO reset. This signal is assumed to be asynchronous with respect to
+        the i_domain clock, so it can be driven by the o_domain clock.
+    strobe_out : Signal(), out
+        Output strobe out. It is asserted when a new sample is presented in
+        the output.
+    re_out : Signal(width), out
+        Output real part.
+    im_out : Signal(width), out
+        Output imaginary part.
     """
-    def __init__(self, i_domain: str, o_domain: str, width: int = 12):
-        self._i_domain = i_domain # sync
-        self._o_domain = o_domain # sampling
+    def __init__(self, i_domain: str, o_domain: str, width: int):
+        self._i_domain = i_domain
+        self._o_domain = o_domain
         self.w = width
+        if self.w > 18:
+            raise ValueError('width > 18 not supported')
 
-        # --- 쓰기 측 포트 (LFM이 사용) ---
-        self.re_in = Signal(signed(width))
-        self.im_in = Signal(signed(width))
-        self.w_en = Signal()      # LFM이 "데이터가 유효하다"고 알리는 신호
-        self.w_rdy = Signal()     # FIFO가 "데이터를 받을 준비가 됐다"고 알리는 신호
+        # i_domain
+        self.re_in = Signal(width)
+        self.im_in = Signal(width)
+        self.valid_re = Signal()
+        self.valid_im = Signal()
 
-        # --- 읽기 측 포트 (axi_ad9361이 사용) ---
-        self.re_out = Signal(signed(width))
-        self.im_out = Signal(signed(width))
-        self.r_en = Signal()      # axi_ad9361이 "데이터를 달라"고 요청하는 신호
-        
-        # 외부에서 비동기 리셋을 받을 단일 포트
-        self.reset_in = Signal()
-       
-        self.almost_empty = Signal() # FIFO가 거의 비었음을 알리는 플래그
+        # o_domain
+        self.reset = Signal()
+        self.re_out = Signal(width)
+        self.im_out = Signal(width)
 
     def elaborate(self, platform):
         m = Module()
         m.submodules.fifo = fifo = AsyncFifo18_36(
             r_domain=self._o_domain, w_domain=self._i_domain)
 
-        reset_w = Signal()
-        m.submodules.sync_reset_w = FFSynchronizer(
-            self.reset_in, reset_w, o_domain=self._i_domain, init=1)
+        # i_domain
 
-        # 2. 읽기(o_domain)측을 위한 동기화된 리셋 생성
-        reset_r = Signal()
-        m.submodules.sync_reset_r = FFSynchronizer(
-            self.reset_in, reset_r, o_domain=self._o_domain, init=1)
+        # o_domain -> i_domain reset
+        #
+        # This synchronizer already provides sufficient delay between the time
+        # that the FIFO sees the deassertion of reset and the first time that
+        # wren is asserted.
+        reset_i = Signal()
+        m.submodules.sync_reset = FFSynchronizer(
+            self.reset, reset_i, o_domain=self._i_domain, init=1)
 
-
-        # --- 쓰기 측 ('sync' 도메인) ---
         m.d.comb += [
             fifo.data_in.eq(Cat(self.re_in, self.im_in)),
-            fifo.wren.eq(self.w_en & self.w_rdy & ~reset_w),
-            self.w_rdy.eq(~fifo.full),
+            fifo.wren.eq(~reset_i),
         ]
-        
-        # --- 읽기 측 ('dac'/'sampling' 도메인) ---
+
+        # o_domain
         m.d.comb += [
             self.re_out.eq(fifo.data_out[:self.w]),
             self.im_out.eq(fifo.data_out[self.w:]),
-            fifo.rden.eq(self.r_en & ~fifo.empty & ~reset_r),
-            self.almost_empty.eq(fifo.empty)
+            fifo.rden.eq(self.valid_re & self.valid_im & ~fifo.empty),
+            fifo.reset.eq(self.reset),
         ]
-        m.d.comb += fifo.reset.eq(self.reset_in)
-        #m.d.comb += fifo.reset.eq(self.sdr_reset_sync)
-        #m.d.comb += fifo.reset.eq(self.reset_in)
+
         return m
+    
+def gen_verilog_txdump():
+    m = Module()
+    internal = ClockDomain()
+    m.domains += internal
+    m.submodules.dump = dump = TxDUMP('sync', 'internal', 18)
+    with open('tx_dump.v', 'w') as f:
+        f.write(amaranth.back.verilog.convert(
+            m, ports=[
+                dump.re_in, dump.im_in, dump.reset, dump.valid_re, dump.valid_im,
+                dump.re_out, dump.im_out, internal.clk, internal.rst,
+            ],
+            emit_src=False))
+        
+if __name__ == '__main__':
+    gen_verilog_txdump()

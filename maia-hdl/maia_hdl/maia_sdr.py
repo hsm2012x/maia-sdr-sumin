@@ -23,10 +23,10 @@ from .pluto_platform import PlutoPlatform
 from .register import Access, Field, Registers, Register, RegisterMap
 from .recorder import Recorder16IQ, RecorderMode
 from .spectrometer import Spectrometer
-
+from .tx_cdc import TxDUMP
 
 from .lfm import LFM
-from .tx_cdc import TxIQCDC
+
 # IP core version
 _version = '0.6.2'
 
@@ -264,10 +264,11 @@ class MaiaSDR(Elaboratable):
         self.im_in = Signal(self.iq_in_width)
         self.interrupt_out = Signal()
 
-        self.dac_enable_in = Signal()
-        self.dac_valid_in = Signal()
-        self.tx_re_out = Signal(16)
-        self.tx_im_out = Signal(16)
+        self.iq_out_width = 16
+        self.re_out = Signal(self.iq_out_width)
+        self.im_out = Signal(self.iq_out_width)
+        self.valid_re = Signal()
+        self.valid_im = Signal()
 
     def ports(self):
         return (
@@ -285,11 +286,11 @@ class MaiaSDR(Elaboratable):
                 self.sync.rst,
                 self.clk2x.clk,
                 self.clk3x.clk,
-                #sumin
-                self.dac_enable_in,
-                self.dac_valid_in,
-                self.tx_re_out,
-                self.tx_im_out,
+                # add tx logic
+                self.re_out,
+                self.im_out,
+                self.valid_re,
+                self.valid_im,
 
             ]
         )
@@ -330,8 +331,27 @@ class MaiaSDR(Elaboratable):
             'sampling', 'sync', self.iq_in_width)
         m.d.comb += [rxiq_cdc.re_in.eq(self.re_in),
                      rxiq_cdc.im_in.eq(self.im_in)]
+        # add tx logic
+        shifted_re = Signal(
+            self.iq_out_width)
+        shifted_im = Signal(
+            self.iq_out_width)
+        shift = self.iq_out_width - self.iq_in_width
+        m.d.comb += [
+            shifted_re.eq(self.re_in << shift),
+            shifted_im.eq(self.im_in << shift),
+        ]
+        m.submodules.tx_dump = tx_dump = TxDUMP(
+            'sampling', 'sampling', self.iq_out_width)
         
-        m.submodules.txiq_cdc = txiq_cdc = TxIQCDC(i_domain="sync", o_domain="sampling", width=12) # <<< txiq_cdc 인스턴스화
+        m.d.comb += [
+            tx_dump.re_in.eq(shifted_re),
+            tx_dump.im_in.eq(shifted_im),
+            tx_dump.valid_re.eq(self.valid_re),
+            tx_dump.valid_im.eq(self.valid_im),
+            self.re_out.eq(tx_dump.re_out),
+            self.im_out.eq(tx_dump.im_out),
+        ]
 
         # Spectrometer (sync domain)
         spectrometer_re_in = Signal(
@@ -436,18 +456,25 @@ class MaiaSDR(Elaboratable):
         # TODO: convert all of this into a RegisterCrossbar module
         address = Signal(self.axi4_awidth, reset_less=True)
         wdata = Signal(32, reset_less=True)
+        sdr_regs_select = self.axi4lite.address[3] == 1
+        recorder_regs_select = (
+            ~sdr_regs_select & (self.axi4lite.address[2] == 1))
+        control_regs_select = (
+            ~sdr_regs_select & (self.axi4lite.address[2] == 0))
         # 1순위: LFM (0x40번지대) - address[6] 비트로 확인
-        lfm_regs_select = self.axi4lite.address[6] == 1
         
-        # 2순위: SDR (0x20번지대) - LFM이 아닐 경우, address[5] 비트로 확인
-        sdr_regs_select = (~lfm_regs_select & (self.axi4lite.address[5] == 1))
         
-        # 3순위: Recorder (0x10번지대) - LFM, SDR이 아닐 경우, address[4] 비트로 확인
-        recorder_regs_select = (~lfm_regs_select & ~sdr_regs_select 
-                              & (self.axi4lite.address[4] == 1))
+        # lfm_regs_select = self.axi4lite.address[6] == 1
         
-        # 4순위: Control (0x00번지대) - 위의 모든 경우가 아닐 때
-        control_regs_select = (~lfm_regs_select & ~sdr_regs_select & ~recorder_regs_select)
+        # # 2순위: SDR (0x20번지대) - LFM이 아닐 경우, address[5] 비트로 확인
+        # sdr_regs_select = (~lfm_regs_select & (self.axi4lite.address[5] == 1))
+        
+        # # 3순위: Recorder (0x10번지대) - LFM, SDR이 아닐 경우, address[4] 비트로 확인
+        # recorder_regs_select = (~lfm_regs_select & ~sdr_regs_select 
+        #                       & (self.axi4lite.address[4] == 1))
+        
+        # # 4순위: Control (0x00번지대) - 위의 모든 경우가 아닐 때
+        # control_regs_select = (~lfm_regs_select & ~sdr_regs_select & ~recorder_regs_select)
 
 
         # domain : s_axi_lite / cpu <-> PL
@@ -481,8 +508,8 @@ class MaiaSDR(Elaboratable):
             address.eq(self.axi4lite.address),
             wdata.eq(self.axi4lite.wdata),
 
-            self.lfm_registers.ren.eq(self.axi4lite.ren & lfm_regs_select),
-            self.lfm_registers.wstrobe.eq(Mux(lfm_regs_select, self.axi4lite.wstrobe, 0)),
+            # self.lfm_registers.ren.eq(self.axi4lite.ren & lfm_regs_select),
+            # self.lfm_registers.wstrobe.eq(Mux(lfm_regs_select, self.axi4lite.wstrobe, 0)),
 
         ]
 
@@ -524,9 +551,8 @@ class MaiaSDR(Elaboratable):
         m.d.comb += rxiq_cdc.reset.eq(
             self.control_registers['control']['sdr_reset'])
 
-
-
-        m.d.comb += txiq_cdc.reset_in.eq(
+        # tx_dump reset sync
+        m.d.comb += tx_dump.reset.eq(
             self.control_registers['control']['sdr_reset'])
         # Interrupts (s_axi_lite domain)
         interrupts_reg = self.control_registers['interrupts']
@@ -536,31 +562,6 @@ class MaiaSDR(Elaboratable):
             interrupts_reg['recorder'].eq(self.recorder.finished),
         ]
 
-        # RxIQCDC의 출력을 TxIQCDC의 입력으로 직접 연결
-        m.d.comb += [
-            # 데이터 버스 연결
-            txiq_cdc.re_in.eq(rxiq_cdc.re_out),
-            txiq_cdc.im_in.eq(rxiq_cdc.im_out),
-            # 핸드셰이크 연결
-            txiq_cdc.w_en.eq(rxiq_cdc.strobe_out),
-
-        ]
-
-        # m.d.comb += [
-        #     txiq_cdc.re_in.eq(self.lfm.dac_data_i),
-        #     txiq_cdc.im_in.eq(self.lfm.dac_data_q),
-        #     txiq_cdc.w_en.eq(self.lfm.valid_out),
-        #     self.lfm.ready_in.eq(txiq_cdc.w_rdy),
-        # ]
-        # --- LFM(생산자)과 TxIQCDC(FIFO) 연결 ---
-        # --- TxIQCDC(FIFO)와 외부 DAC 포트 연결 ---
-        m.d.comb += [
-            # TxIQCDC의 출력을 MaiaSDR의 최종 출력 포트로 연결
-            self.tx_re_out.eq(txiq_cdc.re_out << 4),
-            self.tx_im_out.eq(txiq_cdc.im_out << 4),
-            txiq_cdc.r_en.eq(self.dac_valid_in),
-        ]
-        
         return m
 
 
