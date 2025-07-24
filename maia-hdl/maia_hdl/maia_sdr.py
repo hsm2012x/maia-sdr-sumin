@@ -107,7 +107,7 @@ class MaiaSDR(Elaboratable):
         self.ddc = DDC('clk3x')
         
 
-
+        # spectrometer / ddc_coeff_addr / ddc_coeff / ddc_decimation / ddc_control
         self.sdr_registers = Registers(
             'sdr', {
                 0b000: Register(
@@ -241,12 +241,12 @@ class MaiaSDR(Elaboratable):
                 0x4: Register('lfm_status', [
                      Field('running', Access.R, 1, 0),
                 ]),
-                # 설정 레지스터 
+                # 설정 레지스터
                 0x8: Register('lfm_config_1', [ # 32비트 단위로 레지스터 분리
-                    Field('tw_min', Access.RW, 32, 1),
+                    Field('param1_lfm_min_or_cw1', Access.RW, 32, 1),
                 ]),
                 0xC: Register('lfm_config_2', [
-                    Field('tw_max', Access.RW, 32, 143165577),
+                    Field('param2_lfm_max_or_cw2', Access.RW, 32, 143165577),
                 ]),
                 0x10: Register('lfm_config_3', [
                     Field('chirp_step', Access.RW, 32, 9544),
@@ -356,6 +356,8 @@ class MaiaSDR(Elaboratable):
                 spectrometer_im_in.eq(rxiq_cdc.im_out << shift),
                 spectrometer_strobe_in.eq(rxiq_cdc.strobe_out),
             ]
+
+        # Spectrometer
         m.d.comb += [
             self.spectrometer.strobe_in.eq(spectrometer_strobe_in),
             self.spectrometer.common_edge_2x.eq(common_edge_2x.common_edge),
@@ -434,20 +436,31 @@ class MaiaSDR(Elaboratable):
         # TODO: convert all of this into a RegisterCrossbar module
         address = Signal(self.axi4_awidth, reset_less=True)
         wdata = Signal(32, reset_less=True)
-        sdr_regs_select = self.axi4lite.address[3] == 1
-        recorder_regs_select = (
-            ~sdr_regs_select & (self.axi4lite.address[2] == 1))
-        control_regs_select = (
-            ~sdr_regs_select & (self.axi4lite.address[2] == 0))
+        # 1순위: LFM (0x40번지대) - address[6] 비트로 확인
+        lfm_regs_select = self.axi4lite.address[6] == 1
         
-        lfm_regs_select = self.axi4lite.address[4:7] == 0b100 # 0x4X 주소
+        # 2순위: SDR (0x20번지대) - LFM이 아닐 경우, address[5] 비트로 확인
+        sdr_regs_select = (~lfm_regs_select & (self.axi4lite.address[5] == 1))
+        
+        # 3순위: Recorder (0x10번지대) - LFM, SDR이 아닐 경우, address[4] 비트로 확인
+        recorder_regs_select = (~lfm_regs_select & ~sdr_regs_select 
+                              & (self.axi4lite.address[4] == 1))
+        
+        # 4순위: Control (0x00번지대) - 위의 모든 경우가 아닐 때
+        control_regs_select = (~lfm_regs_select & ~sdr_regs_select & ~recorder_regs_select)
+
+
+        # domain : s_axi_lite / cpu <-> PL
         m.d.s_axi_lite += [
+            # cpu로 보낼 데이터 
             self.axi4lite.rdata.eq(self.control_registers.rdata
                                    | self.recorder_registers.rdata
                                    | sdr_registers_cdc.i_rdata),
+            # cpu로 읽기 완료 전송
             self.axi4lite.rdone.eq(self.control_registers.rdone
                                    | self.recorder_registers.rdone
                                    | sdr_registers_cdc.i_rdone),
+            # cpu로 쓰기 완료 전송
             self.axi4lite.wdone.eq(self.control_registers.wdone
                                    | self.recorder_registers.wdone
                                    | sdr_registers_cdc.i_wdone),
@@ -463,6 +476,8 @@ class MaiaSDR(Elaboratable):
                 self.axi4lite.ren & sdr_regs_select),
             sdr_registers_cdc.i_wstrobe.eq(
                 Mux(sdr_regs_select, self.axi4lite.wstrobe, 0)),
+            
+            # 저장 - Latching
             address.eq(self.axi4lite.address),
             wdata.eq(self.axi4lite.wdata),
 
@@ -470,14 +485,17 @@ class MaiaSDR(Elaboratable):
             self.lfm_registers.wstrobe.eq(Mux(lfm_regs_select, self.axi4lite.wstrobe, 0)),
 
         ]
+
+        
         m.d.comb += [
+            # domain : s_axi_lite / cpu <-> PL
             self.control_registers.address.eq(address),
             self.control_registers.wdata.eq(wdata),
             self.recorder_registers.address.eq(address),
             self.recorder_registers.wdata.eq(wdata),
+            # domain : s_axi_lite & sync / cpu <-> cdc <-> PL
             sdr_registers_cdc.i_address.eq(address),
             sdr_registers_cdc.i_wdata.eq(wdata),    
-
             self.lfm_registers.address.eq(address[0:5]), # LFM 주소 폭에 맞게 슬라이싱
             self.lfm_registers.wdata.eq(wdata),
         ]
