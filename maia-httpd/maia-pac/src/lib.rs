@@ -784,6 +784,7 @@ pub mod maia_sdr {
         ddc_decimation: DdcDecimation,
         ddc_frequency: DdcFrequency,
         ddc_control: DdcControl,
+        tx_control: TxControl,
     }
     impl RegisterBlock {
         #[doc = "0x00 - product_id"]
@@ -845,6 +846,11 @@ pub mod maia_sdr {
         #[inline(always)]
         pub const fn ddc_control(&self) -> &DdcControl {
             &self.ddc_control
+        }
+        #[doc = "0x38 - tx_control"]
+        #[inline(always)]
+        pub const fn tx_control(&self) -> &TxControl {
+            &self.tx_control
         }
     }
     #[doc = "product_id (r) register accessor: product_id\n\nYou can [`read`](crate::Reg::read) this register and get [`product_id::R`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@product_id`]
@@ -1525,6 +1531,61 @@ module"]
         impl crate::Readable for DdcControlSpec {}
         #[doc = "`write(|w| ..)` method takes [`ddc_control::W`](W) writer structure"]
         impl crate::Writable for DdcControlSpec {
+            type Safety = crate::Unsafe;
+            const ZERO_TO_MODIFY_FIELDS_BITMAP: u32 = 0;
+            const ONE_TO_MODIFY_FIELDS_BITMAP: u32 = 0;
+        }
+    }
+    #[doc = "tx_control (rw) register accessor: tx_control\n\nYou can [`read`](crate::Reg::read) this register and get [`tx_control::R`]. You can [`write_with_zero`](crate::Reg::write_with_zero) this register using [`tx_control::W`]. You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@tx_control`]
+module"]
+    #[doc(alias = "tx_control")]
+    pub type TxControl = crate::Reg<tx_control::TxControlSpec>;
+    #[doc = "tx_control"]
+    pub mod tx_control {
+        #[doc = "Register `tx_control` reader"]
+        pub type R = crate::R<TxControlSpec>;
+        #[doc = "Register `tx_control` writer"]
+        pub type W = crate::W<TxControlSpec>;
+        #[doc = "Field `source_select` reader - source_select"]
+        pub type SourceSelectR = crate::BitReader;
+        #[doc = "Field `source_select` writer - source_select"]
+        pub type SourceSelectW<'a, REG> = crate::BitWriter<'a, REG>;
+
+        #[doc = "Field `start_1sec_pulse` writer - start_1sec_pulse (Write-pulse)"]
+        pub type Start1secPulseW<'a, REG> = crate::BitWriter<'a, REG>;
+
+        impl R {
+            #[doc = "Bit 0 - source_select"]
+            #[inline(always)]
+            pub fn source_select(&self) -> SourceSelectR {
+                SourceSelectR::new((self.bits & 1) != 0)
+            }
+        }
+        impl W {
+            #[doc = "Bit 0 - source_select"]
+            #[inline(always)]
+            #[must_use]
+            pub fn source_select(&mut self) -> SourceSelectW<TxControlSpec> {
+                SourceSelectW::new(self, 0)
+            }
+
+            #[doc = "Bit 1 - start_1sec_pulse (Write-pulse)"]
+            #[inline(always)]
+            #[must_use]
+            pub fn start_1sec_pulse(&mut self) -> Start1secPulseW<TxControlSpec> {
+                Start1secPulseW::new(self, 1)
+            }
+        }
+
+        #[doc = "tx_control\n\nYou can [`read`](crate::Reg::read) this register and get [`tx_control::R`](R). You can [`write_with_zero`](crate::Reg::write_with_zero) this register using [`tx_control::W`](W). You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api)."]
+        pub struct TxControlSpec;
+        impl crate::RegisterSpec for TxControlSpec {
+            type Ux = u32;
+        }
+        #[doc = "`read()` method returns [`tx_control::R`](R) reader structure"]
+        impl crate::Readable for TxControlSpec {}
+        #[doc = "`write(|w| ..)` method takes [`tx_control::W`](W) writer structure"]
+        impl crate::Writable for TxControlSpec {
             type Safety = crate::Unsafe;
             const ZERO_TO_MODIFY_FIELDS_BITMAP: u32 = 0;
             const ONE_TO_MODIFY_FIELDS_BITMAP: u32 = 0;

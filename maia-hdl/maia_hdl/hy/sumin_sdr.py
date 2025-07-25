@@ -212,10 +212,10 @@ class MaiaSDR(Elaboratable):
                               0),
                     ]),
                 0b110:Register('tx_control', [
-                            Field('source_select', Access.RW, 2, 1), # 0=DDS, 1=LFM
+                            Field('source_select', Access.RW, 1, 0), # 0=DDS, 1=LFM
                             Field('start_1sec_pulse', Access.Wpulse, 1, 0)
                         ]),
-            }, 4)
+            }, 3)
         
         self.lfm = LFM(clk_freq=SYNC_CLK_FREQ)
 

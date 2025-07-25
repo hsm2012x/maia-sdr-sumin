@@ -452,13 +452,17 @@ impl IpCore {
     ///
     /// See [`IpCore::spectrometer_mode`].
     pub fn set_spectrometer_mode(&mut self, mode: maia_json::SpectrometerMode) {
-        let peak_detect = match mode {
-            maia_json::SpectrometerMode::Average => false,
-            maia_json::SpectrometerMode::PeakDetect => true,
+        let (peak_detect, tx_source_select) = match mode {
+            maia_json::SpectrometerMode::Average => (false, false),
+            maia_json::SpectrometerMode::PeakDetect => (true, true),
         };
+
         self.registers
             .spectrometer()
             .modify(|_, w| w.peak_detect().bit(peak_detect));
+
+        self.registers.tx_control().modify(|_, w| w.source_select().bit(tx_source_select));
+
         self.spectrometer_mode = mode;
     }
 

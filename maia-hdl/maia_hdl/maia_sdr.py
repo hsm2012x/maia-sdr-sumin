@@ -204,7 +204,11 @@ class MaiaSDR(Elaboratable):
                               1,
                               0),
                     ]),
-            }, 3)
+                0b110:Register('tx_control', [
+                            Field('source_select', Access.RW, 1, 0), # 0=loopback, 1=dds
+                            Field('start_1sec_pulse', Access.Wpulse, 1, 0)
+                ]),
+            }, 3) ## 0b111 까지는 3으로 가능함으로 수정하지 말것.
         metadata = {
             'vendor': 'Daniel Estevez',
             'vendorID': 'destevez.net',
@@ -308,20 +312,21 @@ class MaiaSDR(Elaboratable):
         shifted_im = Signal(
             self.iq_out_width)
         shift = self.iq_out_width - self.iq_in_width
-        m.d.comb += [
-            shifted_re.eq(self.re_in << shift),
-            shifted_im.eq(self.im_in << shift),
-        ]
+
+        # m.submodules.tx_dump = tx_dump = TxDUMP(
+        #     'sampling', 'sampling', self.iq_out_width)
+        # m.d.comb += [
+        #     tx_dump.re_in.eq(shifted_re),
+        #     tx_dump.im_in.eq(shifted_im),
+        #     tx_dump.valid_re.eq(self.valid_re),
+        #     tx_dump.valid_im.eq(self.valid_im),
+        #     self.re_out.eq(tx_dump.re_out),
+        #     self.im_out.eq(tx_dump.im_out),
+        # ]
+
         m.submodules.tx_dump = tx_dump = TxDUMP(
-            'sampling', 'sampling', self.iq_out_width)
-        m.d.comb += [
-            tx_dump.re_in.eq(shifted_re),
-            tx_dump.im_in.eq(shifted_im),
-            tx_dump.valid_re.eq(self.valid_re),
-            tx_dump.valid_im.eq(self.valid_im),
-            self.re_out.eq(tx_dump.re_out),
-            self.im_out.eq(tx_dump.im_out),
-        ]
+            'sync', 'sampling', self.iq_out_width)
+
 
         # Spectrometer (sync domain)
         spectrometer_re_in = Signal(
@@ -498,6 +503,39 @@ class MaiaSDR(Elaboratable):
             interrupts_reg['spectrometer'].eq(sync_spectrometer_interrupt.o),
             interrupts_reg['recorder'].eq(self.recorder.finished),
         ]
+
+        m.d.comb += [
+            shifted_re.eq(rxiq_cdc.re_out << shift),
+            shifted_im.eq(rxiq_cdc.im_out << shift),
+        ]
+
+        with m.If(self.sdr_registers['tx_control']['source_select'] == 0):
+            # RF loopback
+            m.d.sync += [
+                tx_dump.re_in.eq(shifted_re),
+                tx_dump.im_in.eq(shifted_im),
+            ]
+        with m.Else():
+            # DDS 또는 다른 소스 (현재는 0으로 설정)
+            m.d.sync += [
+                tx_dump.re_in.eq(0),
+                tx_dump.im_in.eq(0),
+            ]
+        m.d.comb += [
+            
+            tx_dump.valid_re.eq(self.valid_re),
+            tx_dump.valid_im.eq(self.valid_im),
+            self.re_out.eq(tx_dump.re_out),
+            self.im_out.eq(tx_dump.im_out),
+        ]
+        # m.d.comb += [
+        #         tx_dump.re_in.eq(shifted_re),
+        #         tx_dump.im_in.eq(shifted_im),
+        #         tx_dump.valid_re.eq(self.valid_re),
+        #         tx_dump.valid_im.eq(self.valid_im),
+        #         self.re_out.eq(tx_dump.re_out),
+        #         self.im_out.eq(tx_dump.im_out),
+        # ]
 
         return m
 
