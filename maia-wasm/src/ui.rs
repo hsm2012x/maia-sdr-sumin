@@ -229,7 +229,7 @@ impl Ui {
         // onchange closure for DDC settings; they all use the same closure
         // this closure is here to prevent preferences.apply from calling
         // it multiple times, since the PUT request can be expensive to
-        // execute by maia-httpd.
+        // execute by maia-httpd .
         let put_ddc_design = self.ddc_put_design_closure().into_js_value();
         let ddc_onchange = put_ddc_design.unchecked_ref();
         self.elements
