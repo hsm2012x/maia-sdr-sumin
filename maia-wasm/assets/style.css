@@ -30,7 +30,7 @@
         --text-color: white;
         --line-color: white;
 
-        --focus-outline-color: rgba(208, 208, 255, 0.5);
+        --focus-outline-color: rgba(208, 255, 255, 0.5);
 
         --input-bg-color: #222;
         --input-highlight-color: #227;
@@ -237,12 +237,15 @@ form.ui {
     display: flex;
     flex-flow: row wrap;
     align-items: center;
-    justify-content: space-around;
+    justify-content: flex-start;
     column-gap: 20px;
     row-gap: 10px;
     padding: 10px;
 }
-
+#kmu_app_logo {
+  height: 32px; /* 로고의 높이를 적절하게 조절 (예: 32px) */
+  width: auto;  /* 높이에 맞춰 너비는 자동 조절 */
+}
 .ui fieldset {
     border: none;
     padding: 0;
@@ -305,6 +308,7 @@ input.decimation {
 .stopping_button:hover {
     background-color: var(--stopping-color);
 }
+
 
 /* Settings panels */
 
