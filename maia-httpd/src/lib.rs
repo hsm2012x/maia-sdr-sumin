@@ -16,3 +16,4 @@ pub mod rxbuffer;
 pub mod sigmf;
 pub mod spectrometer;
 pub mod uio;
+pub mod dds_core;
