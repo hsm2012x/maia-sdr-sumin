@@ -130,6 +130,9 @@
       <canvas id="canvas"></canvas>
 
       <form class="ui">
+        <div class="logo-container">
+          <img id="kmu_app_logo" src="/maia-icon-192x192.png" alt="Sumin SDR Logo">
+        </div>
         <fieldset class="waterfall_levels">
           <label for="waterfall_min">Waterfall min</label>/<label for="waterfall_max">max</label>
           <input type="number" id="waterfall_min" value="35" step="1" min="0">
@@ -137,6 +140,11 @@
         </fieldset>
         <label>RX freq
           <input type="number" class="rf_frequency" id="ad9361_rx_lo_frequency" step="0.001" min="70" max="6000">
+          MHz
+        </label>
+        <label>TX freq
+        <input type="checkbox" id="ad9361_tx_enable">
+          <input type="number" class="rf_frequency" id="ad9361_tx_lo_frequency" step="0.001" min="70" max="6000">
           MHz
         </label>
         <label>Sampling freq
@@ -151,7 +159,6 @@
           <input type="number" class="gain" id="ad9361_rx_gain" step="1" min="-10" max="73">
           dB
         </label>
-        <img id="kmu_app_logo" src="/maia-icon-192x192.png" alt="Sumin SDR Logo">
         <label>RX AGC
           <select id="ad9361_rx_gain_mode">
 	    <option>Manual</option>
