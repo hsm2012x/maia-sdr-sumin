@@ -81,6 +81,8 @@ impl_preference_data! {
     spectrometer_input: maia_json::SpectrometerInput = maia_json::SpectrometerInput::AD9361,
     spectrometer_output_sampling_frequency: f64 = 20.0,
     spectrometer_mode: maia_json::SpectrometerMode = maia_json::SpectrometerMode::Average,
+    ad9361_tx_lo_frequency: u64 = 2_400_000_000,
+    ad9361_tx_enable: bool = false,
     recording_metadata_filename: String = "recording".to_string(),
     recorder_prepend_timestamp: bool = false,
     recording_metadata_description: String = "".to_string(),

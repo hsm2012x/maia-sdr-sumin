@@ -94,6 +94,8 @@ ui_elements! {
         => NumberInput<u32, input::MHzPresentation>,
     ad9361_rx_gain_mode: HtmlSelectElement => EnumInput<maia_json::Ad9361GainMode>,
     ad9361_rx_gain: HtmlInputElement => NumberInput<f64>,
+    ad9361_tx_enable: HtmlInputElement => CheckboxInput,
+    ad9361_tx_lo_frequency: HtmlInputElement => NumberInput<u64, input::MHzPresentation>,
     ddc_frequency: HtmlInputElement => NumberInput<f64, input::KHzPresentation>,
     ddc_decimation: HtmlInputElement => NumberInput<u32>,
     ddc_transition_bandwidth: HtmlInputElement => NumberInput<f64>,
@@ -181,6 +183,7 @@ impl Ui {
             ad9361_sampling_frequency,
             ad9361_rx_rf_bandwidth,
             ad9361_rx_gain_mode,
+            ad9361_tx_lo_frequency,
             ddc_frequency,
             spectrometer_input,
             spectrometer_output_sampling_frequency,
@@ -193,7 +196,12 @@ impl Ui {
             recorder_maximum_duration,
             geolocation_watch
         );
-
+        // ===== tx_enable connect =====
+        self.elements.ad9361_tx_enable.set_onchange(Some(
+            self.tx_enable_onchange()
+                .into_js_value()
+                .unchecked_ref(),
+        ));
         // This uses a custom onchange function that calls the macro-generated one.
         self.elements.ad9361_rx_gain.set_onchange(Some(
             self.ad9361_rx_gain_onchange_manual()
@@ -388,7 +396,8 @@ impl Ui {
         sampling_frequency,
         rx_rf_bandwidth,
         rx_gain,
-        rx_gain_mode
+        rx_gain_mode,
+        tx_lo_frequency
     );
     impl_onchange_patch_modify_noop!(ad9361, maia_json::PatchAd9361);
 
@@ -1003,6 +1012,36 @@ impl Ui {
             .unwrap()
             .call0(&JsValue::NULL)?;
         Ok(())
+    }
+
+    fn tx_enable_onchange(&self) -> Closure<dyn Fn() -> JsValue> {
+        let ui = self.clone();
+        Closure::new(move || {
+            // 체크박스의 현재 상태 (true/false)를 가져옵니다.
+            let Some(enabled) = ui.elements.ad9361_tx_enable.get() else {
+                return JsValue::NULL;
+            };
+
+            // spectrometer 모드 드롭다운의 현재 선택된 값을 가져옵니다.
+            let Some(mode) = ui.elements.spectrometer_mode.get() else {
+                return JsValue::NULL;
+            };
+
+            // 서버로 보낼 PATCH 데이터를 만듭니다.
+            let patch = maia_json::PatchSpectrometer {
+                tx_enable: Some(enabled),
+                mode: Some(mode), // TX 비활성화 시 돌아갈 모드를 알려주기 위해 현재 모드도 함께 전송
+                ..Default::default()
+            };
+
+            // patch_spectrometer_update_elements 함수를 호출하여 서버로 PATCH 요청을 보냅니다.
+            let ui = ui.clone();
+            future_to_promise(async move {
+                ui.patch_spectrometer_update_elements(&patch).await?;
+                Ok(JsValue::NULL)
+            })
+            .into()
+        })
     }
 }
 

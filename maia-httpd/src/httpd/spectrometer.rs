@@ -57,6 +57,12 @@ async fn update_spectrometer(state: &AppState, patch: &PatchSpectrometer) -> Res
     if let Some(mode) = &patch.mode {
         state.ip_core().lock().unwrap().set_spectrometer_mode(*mode);
     }
+
+    // tx_enable 필드가 있으면 새로 만든 set_tx_enable 함수를 호출합니다.
+    if let Some(enabled) = &patch.tx_enable {
+        state.ip_core().lock().unwrap().set_tx_enable(*enabled);
+    }
+
     match patch {
         PatchSpectrometer {
             number_integrations: Some(n),
