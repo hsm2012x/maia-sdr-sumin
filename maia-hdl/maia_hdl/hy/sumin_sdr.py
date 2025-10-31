@@ -23,8 +23,9 @@ from .pluto_platform import PlutoPlatform
 from .register import Access, Field, Registers, Register, RegisterMap
 from .recorder import Recorder16IQ, RecorderMode
 from .spectrometer import Spectrometer
-from .fifo import AsyncFifo18_36
-from .tx_dump import TxDUMP
+from .tx_cdc import TxDUMP
+
+from .lfm import LFM
 
 # IP core version
 _version = '0.6.2'
@@ -48,7 +49,10 @@ class MaiaSDR(Elaboratable):
         self.sync = ClockDomain()
         self.clk2x = ClockDomain()
         self.clk3x = ClockDomain()
+        self.dac = ClockDomain()
+        SYNC_CLK_FREQ = 30_000_000
 
+        
         self.axi4lite = Axi4LiteRegisterBridge(
             self.axi4_awidth, name='s_axi_lite')
         self.control_registers = Registers(
@@ -101,6 +105,9 @@ class MaiaSDR(Elaboratable):
             dma_name='m_axi_recorder', domain_in='sync',
             domain_dma='s_axi_lite')
         self.ddc = DDC('clk3x')
+        
+
+        # spectrometer / ddc_coeff_addr / ddc_coeff / ddc_decimation / ddc_control
         self.sdr_registers = Registers(
             'sdr', {
                 0b000: Register(
@@ -205,10 +212,13 @@ class MaiaSDR(Elaboratable):
                               0),
                     ]),
                 0b110:Register('tx_control', [
-                            Field('source_select', Access.RW, 1, 0), # 0=loopback, 1=dds
+                            Field('source_select', Access.RW, 1, 0), # 0=DDS, 1=LFM
                             Field('start_1sec_pulse', Access.Wpulse, 1, 0)
-                ]),
-            }, 3) ## 0b111 까지는 3으로 가능함으로 수정하지 말것.
+                        ]),
+            }, 3)
+        
+        self.lfm = LFM(clk_freq=SYNC_CLK_FREQ)
+
         metadata = {
             'vendor': 'Daniel Estevez',
             'vendorID': 'destevez.net',
@@ -219,17 +229,41 @@ class MaiaSDR(Elaboratable):
             'licenseText': ('SPDX-License-Identifier: MIT '
                             'Copyright (C) Daniel Estevez 2022-2024'),
         }
+       
+        self.lfm_registers = Registers(
+            'lfm', {
+                # 제어 레지스터
+                0x0: Register('lfm_control', [
+                    Field('start_continuous', Access.Wpulse, 1, 0),
+                    Field('stop_continuous', Access.Wpulse, 1, 0),
+                ]),
+                # 상태 레지스터
+                0x4: Register('lfm_status', [
+                     Field('running', Access.R, 1, 0),
+                ]),
+                # 설정 레지스터
+                0x8: Register('lfm_config_1', [ # 32비트 단위로 레지스터 분리
+                    Field('param1_lfm_min_or_cw1', Access.RW, 32, 1),
+                ]),
+                0xC: Register('lfm_config_2', [
+                    Field('param2_lfm_max_or_cw2', Access.RW, 32, 143165577),
+                ]),
+                0x10: Register('lfm_config_3', [
+                    Field('chirp_step', Access.RW, 32, 9544),
+                ]),
+            }, 5)
         self.register_map = RegisterMap({
             0x0: self.control_registers,
             0x10: self.recorder_registers,
             0x20: self.sdr_registers,
+            0x40: self.lfm_registers,
         }, metadata)
-
+        
         self.iq_in_width = 12
         self.re_in = Signal(self.iq_in_width)
         self.im_in = Signal(self.iq_in_width)
         self.interrupt_out = Signal()
-        # add tx logic
+
         self.iq_out_width = 16
         self.re_out = Signal(self.iq_out_width)
         self.im_out = Signal(self.iq_out_width)
@@ -257,6 +291,7 @@ class MaiaSDR(Elaboratable):
                 self.im_out,
                 self.valid_re,
                 self.valid_im,
+
             ]
         )
 
@@ -272,25 +307,18 @@ class MaiaSDR(Elaboratable):
             self.clk2x,
             self.clk3x,
         ]
-        # 도메인 전환 ->  s_lite : control & recorder
         s_axi_lite_renamer = DomainRenamer({'sync': 's_axi_lite'})
         m.submodules.axi4lite = s_axi_lite_renamer(self.axi4lite)
         m.submodules.control_registers = s_axi_lite_renamer(
             self.control_registers)
         m.submodules.recorder_registers = s_axi_lite_renamer(
             self.recorder_registers)
-        
-        # sync's submodule
         m.submodules.spectrometer = self.spectrometer
         m.submodules.sync_spectrometer_interrupt = \
             sync_spectrometer_interrupt = PulseSynchronizer(
                 i_domain='sync', o_domain='s_axi_lite')
-        m.submodules.ddc = self.ddc
-
-        # s_lite's submodule
         m.submodules.recorder = self.recorder
-        
-        
+        m.submodules.ddc = self.ddc
         m.submodules.sdr_registers = self.sdr_registers
         m.submodules.sdr_registers_cdc = sdr_registers_cdc = RegisterCDC(
             's_axi_lite', 'sync', self.sdr_registers.aw)
@@ -299,34 +327,31 @@ class MaiaSDR(Elaboratable):
             'sync', 'clk2x', 2)
         m.submodules.common_edge_3x = common_edge_3x = ClkNxCommonEdge(
             'sync', 'clk3x', 3)
-
-        # RX IQ CDC
         m.submodules.rxiq_cdc = rxiq_cdc = RxIQCDC(
             'sampling', 'sync', self.iq_in_width)
         m.d.comb += [rxiq_cdc.re_in.eq(self.re_in),
                      rxiq_cdc.im_in.eq(self.im_in)]
-        
         # add tx logic
         shifted_re = Signal(
             self.iq_out_width)
         shifted_im = Signal(
             self.iq_out_width)
         shift = self.iq_out_width - self.iq_in_width
-
-        # m.submodules.tx_dump = tx_dump = TxDUMP(
-        #     'sampling', 'sampling', self.iq_out_width)
-        # m.d.comb += [
-        #     tx_dump.re_in.eq(shifted_re),
-        #     tx_dump.im_in.eq(shifted_im),
-        #     tx_dump.valid_re.eq(self.valid_re),
-        #     tx_dump.valid_im.eq(self.valid_im),
-        #     self.re_out.eq(tx_dump.re_out),
-        #     self.im_out.eq(tx_dump.im_out),
-        # ]
-
+        m.d.comb += [
+            shifted_re.eq(self.re_in << shift),
+            shifted_im.eq(self.im_in << shift),
+        ]
         m.submodules.tx_dump = tx_dump = TxDUMP(
-            'sync', 'sampling', self.iq_out_width)
-
+            'sampling', 'sampling', self.iq_out_width)
+        
+        m.d.comb += [
+            tx_dump.re_in.eq(shifted_re),
+            tx_dump.im_in.eq(shifted_im),
+            tx_dump.valid_re.eq(self.valid_re),
+            tx_dump.valid_im.eq(self.valid_im),
+            self.re_out.eq(tx_dump.re_out),
+            self.im_out.eq(tx_dump.im_out),
+        ]
 
         # Spectrometer (sync domain)
         spectrometer_re_in = Signal(
@@ -351,7 +376,8 @@ class MaiaSDR(Elaboratable):
                 spectrometer_im_in.eq(rxiq_cdc.im_out << shift),
                 spectrometer_strobe_in.eq(rxiq_cdc.strobe_out),
             ]
-        # spectrometer : sdr_register 정보 전달
+
+        # Spectrometer
         m.d.comb += [
             self.spectrometer.strobe_in.eq(spectrometer_strobe_in),
             self.spectrometer.common_edge_2x.eq(common_edge_2x.common_edge),
@@ -435,15 +461,33 @@ class MaiaSDR(Elaboratable):
             ~sdr_regs_select & (self.axi4lite.address[2] == 1))
         control_regs_select = (
             ~sdr_regs_select & (self.axi4lite.address[2] == 0))
+        # 1순위: LFM (0x40번지대) - address[6] 비트로 확인
         
+        
+        # lfm_regs_select = self.axi4lite.address[6] == 1
+        
+        # # 2순위: SDR (0x20번지대) - LFM이 아닐 경우, address[5] 비트로 확인
+        # sdr_regs_select = (~lfm_regs_select & (self.axi4lite.address[5] == 1))
+        
+        # # 3순위: Recorder (0x10번지대) - LFM, SDR이 아닐 경우, address[4] 비트로 확인
+        # recorder_regs_select = (~lfm_regs_select & ~sdr_regs_select 
+        #                       & (self.axi4lite.address[4] == 1))
+        
+        # # 4순위: Control (0x00번지대) - 위의 모든 경우가 아닐 때
+        # control_regs_select = (~lfm_regs_select & ~sdr_regs_select & ~recorder_regs_select)
 
+
+        # domain : s_axi_lite / cpu <-> PL
         m.d.s_axi_lite += [
+            # cpu로 보낼 데이터 
             self.axi4lite.rdata.eq(self.control_registers.rdata
                                    | self.recorder_registers.rdata
                                    | sdr_registers_cdc.i_rdata),
+            # cpu로 읽기 완료 전송
             self.axi4lite.rdone.eq(self.control_registers.rdone
                                    | self.recorder_registers.rdone
                                    | sdr_registers_cdc.i_rdone),
+            # cpu로 쓰기 완료 전송
             self.axi4lite.wdone.eq(self.control_registers.wdone
                                    | self.recorder_registers.wdone
                                    | sdr_registers_cdc.i_wdone),
@@ -459,16 +503,28 @@ class MaiaSDR(Elaboratable):
                 self.axi4lite.ren & sdr_regs_select),
             sdr_registers_cdc.i_wstrobe.eq(
                 Mux(sdr_regs_select, self.axi4lite.wstrobe, 0)),
+            
+            # 저장 - Latching
             address.eq(self.axi4lite.address),
             wdata.eq(self.axi4lite.wdata),
+
+            # self.lfm_registers.ren.eq(self.axi4lite.ren & lfm_regs_select),
+            # self.lfm_registers.wstrobe.eq(Mux(lfm_regs_select, self.axi4lite.wstrobe, 0)),
+
         ]
+
+        
         m.d.comb += [
+            # domain : s_axi_lite / cpu <-> PL
             self.control_registers.address.eq(address),
             self.control_registers.wdata.eq(wdata),
             self.recorder_registers.address.eq(address),
             self.recorder_registers.wdata.eq(wdata),
+            # domain : s_axi_lite & sync / cpu <-> cdc <-> PL
             sdr_registers_cdc.i_address.eq(address),
-            sdr_registers_cdc.i_wdata.eq(wdata),
+            sdr_registers_cdc.i_wdata.eq(wdata),    
+            self.lfm_registers.address.eq(address[0:5]), # LFM 주소 폭에 맞게 슬라이싱
+            self.lfm_registers.wdata.eq(wdata),
         ]
 
         # Registers sync domain
@@ -484,18 +540,20 @@ class MaiaSDR(Elaboratable):
         # internal resets
         # We use FFSynchronizer rather than ResetSynchronizer because of
         # https://github.com/amaranth-lang/amaranth/issues/721
+        #for 루프: sync, clk2x 등 모든 내부 클럭 도메인에 대해 반복
+        # 
         for internal in ['sync', 'clk2x', 'clk3x', 'sampling']:
             setattr(m.submodules, f'{internal}_rst', FFSynchronizer(
                 self.control_registers['control']['sdr_reset'],
                 ResetSignal(internal), o_domain=internal,
                 init=1))
+        
         m.d.comb += rxiq_cdc.reset.eq(
             self.control_registers['control']['sdr_reset'])
-        
-        # add tx logic
+
+        # tx_dump reset sync
         m.d.comb += tx_dump.reset.eq(
             self.control_registers['control']['sdr_reset'])
-
         # Interrupts (s_axi_lite domain)
         interrupts_reg = self.control_registers['interrupts']
         m.d.comb += [
@@ -503,39 +561,6 @@ class MaiaSDR(Elaboratable):
             interrupts_reg['spectrometer'].eq(sync_spectrometer_interrupt.o),
             interrupts_reg['recorder'].eq(self.recorder.finished),
         ]
-
-        m.d.comb += [
-            shifted_re.eq(rxiq_cdc.re_out << shift),
-            shifted_im.eq(rxiq_cdc.im_out << shift),
-        ]
-
-        with m.If(self.sdr_registers['tx_control']['source_select'] == 0):
-            # RF loopback
-            m.d.sync += [
-                tx_dump.re_in.eq(shifted_re),
-                tx_dump.im_in.eq(shifted_im),
-            ]
-        with m.Else():
-            # DDS 또는 다른 소스 (현재는 0으로 설정)
-            m.d.sync += [
-                tx_dump.re_in.eq(0),
-                tx_dump.im_in.eq(0),
-            ]
-        m.d.comb += [
-            
-            tx_dump.valid_re.eq(self.valid_re),
-            tx_dump.valid_im.eq(self.valid_im),
-            self.re_out.eq(tx_dump.re_out),
-            self.im_out.eq(tx_dump.im_out),
-        ]
-        # m.d.comb += [
-        #         tx_dump.re_in.eq(shifted_re),
-        #         tx_dump.im_in.eq(shifted_im),
-        #         tx_dump.valid_re.eq(self.valid_re),
-        #         tx_dump.valid_im.eq(self.valid_im),
-        #         self.re_out.eq(tx_dump.re_out),
-        #         self.im_out.eq(tx_dump.im_out),
-        # ]
 
         return m
 

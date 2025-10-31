@@ -9,6 +9,7 @@ use crate::{
     fpga::{InterruptHandler, IpCore},
     httpd::{self, RecorderFinishWaiter, RecorderState},
     iio::Ad9361,
+    dds_core::DdsCore,
     spectrometer::{Spectrometer, SpectrometerConfig},
 };
 use anyhow::Result;
@@ -35,9 +36,12 @@ impl App {
         let (ip_core, interrupt_handler) = IpCore::take().await?;
         let ip_core = std::sync::Mutex::new(ip_core);
         let ad9361 = tokio::sync::Mutex::new(Ad9361::new().await?);
+        let dds_core = tokio::sync::Mutex::new(DdsCore::new().await?);
+
         let recorder = RecorderState::new(&ad9361, &ip_core).await?;
         let state = AppState(Arc::new(State {
             ad9361,
+            dds_core,
             ip_core,
             geolocation: std::sync::Mutex::new(None),
             recorder,
@@ -48,7 +52,9 @@ impl App {
             state.ad9361().lock().await.get_sampling_frequency().await? as f32,
             state.ip_core().lock().unwrap().spectrometer_mode(),
         );
-
+        state.dds_core().lock().await.set_i_channel_source(0x02).await?;
+        state.dds_core().lock().await.set_q_channel_source(0x02).await?;
+        tracing::info!("DDS core channels configured for DDS output");
         // Build application objects
 
         let (waterfall_sender, _) = broadcast::channel(16);
@@ -106,6 +112,7 @@ pub struct AppState(Arc<State>);
 #[derive(Debug)]
 struct State {
     ad9361: tokio::sync::Mutex<Ad9361>,
+    dds_core: tokio::sync::Mutex<DdsCore>,
     ip_core: Mutex<IpCore>,
     geolocation: Mutex<Option<maia_json::Geolocation>>,
     recorder: RecorderState,
@@ -117,7 +124,10 @@ impl AppState {
     pub fn ad9361(&self) -> &tokio::sync::Mutex<Ad9361> {
         &self.0.ad9361
     }
-
+    /// Gives access to the ['Ddscore'] object of the application.
+    pub fn dds_core(&self) -> &tokio::sync::Mutex<DdsCore> { 
+        &self.0.dds_core 
+    }
     /// Gives access to the [`IpCore`] object of the application.
     pub fn ip_core(&self) -> &Mutex<IpCore> {
         &self.0.ip_core

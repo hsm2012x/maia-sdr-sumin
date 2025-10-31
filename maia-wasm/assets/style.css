@@ -30,7 +30,7 @@
         --text-color: white;
         --line-color: white;
 
-        --focus-outline-color: rgba(208, 208, 255, 0.5);
+        --focus-outline-color: rgba(208, 255, 255, 0.5);
 
         --input-bg-color: #222;
         --input-highlight-color: #227;
@@ -237,18 +237,49 @@ form.ui {
     display: flex;
     flex-flow: row wrap;
     align-items: center;
-    justify-content: space-around;
+    justify-content: flex-start;
     column-gap: 20px;
     row-gap: 10px;
     padding: 10px;
 }
-
+#kmu_app_logo {
+  height: 32px; /* 로고의 높이를 적절하게 조절 (예: 32px) */
+  width: auto;  /* 높이에 맞춰 너비는 자동 조절 */
+}
 .ui fieldset {
     border: none;
     padding: 0;
     margin: 0;
 }
+/* style.css 파일의 적절한 위치에 아래 코드를 추가하세요. */
 
+/* TX 주파수 설정 영역 내부 요소들의 간격 조정을 위한 스타일 */
+label:has(#ad9361_tx_enable) {
+  display: flex;
+  align-items: center;
+}
+
+#ad9361_tx_enable {
+  margin-right: 5px; /* 체크박스와 주파수 입력창 사이의 오른쪽 여백 */
+}
+
+/* style.css 파일의 적절한 위치에 아래 코드를 추가하거나 수정하세요. */
+
+/* 로고를 담을 컨테이너 스타일 */
+.logo-container {
+  /* flex 아이템이 한 줄을 모두 차지하도록 설정 */
+  flex-basis: 100%; 
+  /* 내부 로고를 왼쪽 정렬 */
+  text-align: left; 
+  /* 다른 UI 요소와의 세로 간격 */
+  margin-bottom: 10px; 
+}
+
+/* 로고 이미지 자체의 스타일 */
+#kmu_app_logo {
+  height: 40px; /* 로고 높이를 약간 더 키움 (조절 가능) */
+  width: auto;  /* 높이에 맞춰 너비는 자동 조절 */
+}
 .waterfall_levels input {
     width: 4em;
 }
@@ -305,6 +336,7 @@ input.decimation {
 .stopping_button:hover {
     background-color: var(--stopping-color);
 }
+
 
 /* Settings panels */
 

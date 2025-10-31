@@ -456,10 +456,20 @@ impl IpCore {
             maia_json::SpectrometerMode::Average => false,
             maia_json::SpectrometerMode::PeakDetect => true,
         };
+
         self.registers
             .spectrometer()
             .modify(|_, w| w.peak_detect().bit(peak_detect));
+
+        
+
         self.spectrometer_mode = mode;
+    }
+    // Set tx_enable
+    pub fn set_tx_enable(&mut self, enabled: bool) {
+        self.registers
+            .tx_control()
+            .modify(|_, w| w.source_select().bit(enabled));
     }
 
     /// Returns the new buffers that have been written by the spectrometer.

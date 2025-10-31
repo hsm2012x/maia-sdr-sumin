@@ -199,6 +199,9 @@ pub struct PatchSpectrometer {
     /// Spectrometer mode.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mode: Option<SpectrometerMode>,
+    /// Tx mode.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tx_enable: Option<bool>, 
 }
 
 /// Spectrometer input source.
@@ -225,6 +228,7 @@ pub enum SpectrometerMode {
     ///
     /// The maximum (peak) power over the integration period is computed.
     PeakDetect,
+
 }
 
 impl_str_conv!(SpectrometerMode,
