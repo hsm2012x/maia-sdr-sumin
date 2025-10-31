@@ -13,7 +13,7 @@ from amaranth.lib.cdc import FFSynchronizer, PulseSynchronizer
 import amaranth.back.verilog
 
 from .axi4_lite import Axi4LiteRegisterBridge
-from .cdc import RegisterCDC, RxIQCDC
+from .cdc import RegisterCDC, RxIQCDC, TxIQCDC
 from .clknx import ClkNxCommonEdge
 from .config import MaiaSDRConfig
 from . import configs
@@ -24,7 +24,7 @@ from .register import Access, Field, Registers, Register, RegisterMap
 from .recorder import Recorder16IQ, RecorderMode
 from .spectrometer import Spectrometer
 from .fifo import AsyncFifo18_36
-from .tx_dump import TxDUMP
+from .delay import BRAMDelay
 
 # IP core version
 _version = '0.6.2'
@@ -204,11 +204,7 @@ class MaiaSDR(Elaboratable):
                               1,
                               0),
                     ]),
-                0b110:Register('tx_control', [
-                            Field('source_select', Access.RW, 1, 0), # 0=loopback, 1=dds
-                            Field('start_1sec_pulse', Access.Wpulse, 1, 0)
-                ]),
-            }, 3) ## 0b111 까지는 3으로 가능함으로 수정하지 말것.
+            }, 3)
         metadata = {
             'vendor': 'Daniel Estevez',
             'vendorID': 'destevez.net',
@@ -272,25 +268,18 @@ class MaiaSDR(Elaboratable):
             self.clk2x,
             self.clk3x,
         ]
-        # 도메인 전환 ->  s_lite : control & recorder
         s_axi_lite_renamer = DomainRenamer({'sync': 's_axi_lite'})
         m.submodules.axi4lite = s_axi_lite_renamer(self.axi4lite)
         m.submodules.control_registers = s_axi_lite_renamer(
             self.control_registers)
         m.submodules.recorder_registers = s_axi_lite_renamer(
             self.recorder_registers)
-        
-        # sync's submodule
         m.submodules.spectrometer = self.spectrometer
         m.submodules.sync_spectrometer_interrupt = \
             sync_spectrometer_interrupt = PulseSynchronizer(
                 i_domain='sync', o_domain='s_axi_lite')
-        m.submodules.ddc = self.ddc
-
-        # s_lite's submodule
         m.submodules.recorder = self.recorder
-        
-        
+        m.submodules.ddc = self.ddc
         m.submodules.sdr_registers = self.sdr_registers
         m.submodules.sdr_registers_cdc = sdr_registers_cdc = RegisterCDC(
             's_axi_lite', 'sync', self.sdr_registers.aw)
@@ -306,27 +295,42 @@ class MaiaSDR(Elaboratable):
         m.d.comb += [rxiq_cdc.re_in.eq(self.re_in),
                      rxiq_cdc.im_in.eq(self.im_in)]
         
-        # add tx logic
-        shifted_re = Signal(
-            self.iq_out_width)
-        shifted_im = Signal(
-            self.iq_out_width)
+        ################## add loopback logic #############################
+        # shift IQ samples
+        bram_delay_re_in = Signal(
+            self.iq_out_width, reset_less=True)
+        bram_delay_im_in = Signal(
+            self.iq_out_width, reset_less=True)
         shift = self.iq_out_width - self.iq_in_width
+        bram_delay_write_en =Signal()
+        m.d.sync += [
+            bram_delay_re_in.eq(rxiq_cdc.re_out << shift),
+            bram_delay_im_in.eq(rxiq_cdc.im_out << shift),
+            bram_delay_write_en.eq(rxiq_cdc.strobe_out),
+        ]
 
-        # m.submodules.tx_dump = tx_dump = TxDUMP(
-        #     'sampling', 'sampling', self.iq_out_width)
-        # m.d.comb += [
-        #     tx_dump.re_in.eq(shifted_re),
-        #     tx_dump.im_in.eq(shifted_im),
-        #     tx_dump.valid_re.eq(self.valid_re),
-        #     tx_dump.valid_im.eq(self.valid_im),
-        #     self.re_out.eq(tx_dump.re_out),
-        #     self.im_out.eq(tx_dump.im_out),
-        # ]
+        # delay block
+        m.submodules.bram_delay = bram_delay = BRAMDelay(
+            bank_bits=5, width=32, delay=10000)
+        m.d.comb += [
+            bram_delay.in_data.eq(Cat(bram_delay_re_in, bram_delay_im_in)),
+            bram_delay.write_en.eq(bram_delay_write_en),
+        ]
 
-        m.submodules.tx_dump = tx_dump = TxDUMP(
+        # tx iq cdc block
+        m.submodules.txiq_cdc = txiq_cdc = TxIQCDC(
             'sync', 'sampling', self.iq_out_width)
-
+        m.d.comb += [
+            txiq_cdc.re_in.eq(bram_delay.out_data[:self.iq_out_width]),
+            txiq_cdc.im_in.eq(bram_delay.out_data[self.iq_out_width:]),
+            txiq_cdc.valid_re.eq(self.valid_re),
+            txiq_cdc.valid_im.eq(self.valid_im),
+            bram_delay.read_en.eq(txiq_cdc.not_full & bram_delay_write_en),
+            txiq_cdc.write_en.eq(txiq_cdc.not_full & bram_delay_write_en),
+            self.re_out.eq(txiq_cdc.re_out),
+            self.im_out.eq(txiq_cdc.im_out),
+        ]
+        ###################################################################
 
         # Spectrometer (sync domain)
         spectrometer_re_in = Signal(
@@ -351,7 +355,6 @@ class MaiaSDR(Elaboratable):
                 spectrometer_im_in.eq(rxiq_cdc.im_out << shift),
                 spectrometer_strobe_in.eq(rxiq_cdc.strobe_out),
             ]
-        # spectrometer : sdr_register 정보 전달
         m.d.comb += [
             self.spectrometer.strobe_in.eq(spectrometer_strobe_in),
             self.spectrometer.common_edge_2x.eq(common_edge_2x.common_edge),
@@ -435,8 +438,6 @@ class MaiaSDR(Elaboratable):
             ~sdr_regs_select & (self.axi4lite.address[2] == 1))
         control_regs_select = (
             ~sdr_regs_select & (self.axi4lite.address[2] == 0))
-        
-
         m.d.s_axi_lite += [
             self.axi4lite.rdata.eq(self.control_registers.rdata
                                    | self.recorder_registers.rdata
@@ -492,9 +493,10 @@ class MaiaSDR(Elaboratable):
         m.d.comb += rxiq_cdc.reset.eq(
             self.control_registers['control']['sdr_reset'])
         
-        # add tx logic
-        m.d.comb += tx_dump.reset.eq(
+        ################## add loopback logic #############################
+        m.d.comb += txiq_cdc.reset.eq(
             self.control_registers['control']['sdr_reset'])
+        ###################################################################
 
         # Interrupts (s_axi_lite domain)
         interrupts_reg = self.control_registers['interrupts']
@@ -503,39 +505,6 @@ class MaiaSDR(Elaboratable):
             interrupts_reg['spectrometer'].eq(sync_spectrometer_interrupt.o),
             interrupts_reg['recorder'].eq(self.recorder.finished),
         ]
-
-        m.d.comb += [
-            shifted_re.eq(rxiq_cdc.re_out << shift),
-            shifted_im.eq(rxiq_cdc.im_out << shift),
-        ]
-
-        with m.If(self.sdr_registers['tx_control']['source_select'] == 0):
-            # RF loopback
-            m.d.sync += [
-                tx_dump.re_in.eq(shifted_re),
-                tx_dump.im_in.eq(shifted_im),
-            ]
-        with m.Else():
-            # DDS 또는 다른 소스 (현재는 0으로 설정)
-            m.d.sync += [
-                tx_dump.re_in.eq(0),
-                tx_dump.im_in.eq(0),
-            ]
-        m.d.comb += [
-            
-            tx_dump.valid_re.eq(self.valid_re),
-            tx_dump.valid_im.eq(self.valid_im),
-            self.re_out.eq(tx_dump.re_out),
-            self.im_out.eq(tx_dump.im_out),
-        ]
-        # m.d.comb += [
-        #         tx_dump.re_in.eq(shifted_re),
-        #         tx_dump.im_in.eq(shifted_im),
-        #         tx_dump.valid_re.eq(self.valid_re),
-        #         tx_dump.valid_im.eq(self.valid_im),
-        #         self.re_out.eq(tx_dump.re_out),
-        #         self.im_out.eq(tx_dump.im_out),
-        # ]
 
         return m
 
