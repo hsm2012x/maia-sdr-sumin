@@ -83,6 +83,7 @@ impl_preference_data! {
     spectrometer_mode: maia_json::SpectrometerMode = maia_json::SpectrometerMode::Average,
     ad9361_tx_lo_frequency: u64 = 2_400_000_000,
     ad9361_tx_enable: bool = false,
+    distance_meters: f64 = 1.0,
     recording_metadata_filename: String = "recording".to_string(),
     recorder_prepend_timestamp: bool = false,
     recording_metadata_description: String = "".to_string(),

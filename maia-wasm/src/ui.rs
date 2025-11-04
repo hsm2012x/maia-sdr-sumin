@@ -96,6 +96,7 @@ ui_elements! {
     ad9361_rx_gain: HtmlInputElement => NumberInput<f64>,
     ad9361_tx_enable: HtmlInputElement => CheckboxInput,
     ad9361_tx_lo_frequency: HtmlInputElement => NumberInput<u64, input::MHzPresentation>,
+    distance_meters: HtmlInputElement => NumberInput<f64>,
     ddc_frequency: HtmlInputElement => NumberInput<f64, input::KHzPresentation>,
     ddc_decimation: HtmlInputElement => NumberInput<u32>,
     ddc_transition_bandwidth: HtmlInputElement => NumberInput<f64>,
@@ -201,6 +202,12 @@ impl Ui {
             self.tx_enable_onchange()
                 .into_js_value()
                 .unchecked_ref(),
+        ));
+        // ===== distance_meters connect  =====
+        self.elements.distance_meters.set_onchange(Some(
+        self.distance_meters_onchange()
+            .into_js_value()
+            .unchecked_ref(),
         ));
         // This uses a custom onchange function that calls the macro-generated one.
         self.elements.ad9361_rx_gain.set_onchange(Some(
@@ -1026,7 +1033,7 @@ impl Ui {
             let Some(mode) = ui.elements.spectrometer_mode.get() else {
                 return JsValue::NULL;
             };
-
+            // Create PATCH data for server
             // 서버로 보낼 PATCH 데이터를 만듭니다.
             let patch = maia_json::PatchSpectrometer {
                 tx_enable: Some(enabled),
@@ -1035,6 +1042,38 @@ impl Ui {
             };
 
             // patch_spectrometer_update_elements 함수를 호출하여 서버로 PATCH 요청을 보냅니다.
+            let ui = ui.clone();
+            future_to_promise(async move {
+                ui.patch_spectrometer_update_elements(&patch).await?;
+                Ok(JsValue::NULL)
+            })
+            .into()
+        })
+    }
+
+    // tx_enable_onchange를 복사하여 수정
+    fn distance_meters_onchange(&self) -> Closure<dyn Fn() -> JsValue> {
+        let ui = self.clone();
+        Closure::new(move || {
+            // 1. distance_meters 입력창에서 값을 가져옵니다.
+            let Some(distance) = ui.elements.distance_meters.get() else {
+                return JsValue::NULL;
+            };
+
+            // 2. 환경설정에 값을 저장합니다 (경고 제거 및 상태 유지)
+            if let Ok(mut prefs) = ui.preferences.try_borrow_mut() {
+                if let Err(e) = prefs.update_distance_meters(&distance) {
+                    web_sys::console::error_1(&e);
+                }
+            }
+
+            // 3. 서버로 보낼 PATCH 데이터를 만듭니다.
+            let patch = maia_json::PatchSpectrometer {
+                distance_meters: Some(distance), // distance_meters 필드 사용
+                ..Default::default()
+            };
+
+            // 4. patch_spectrometer_update_elements 함수로 서버에 전송합니다.
             let ui = ui.clone();
             future_to_promise(async move {
                 ui.patch_spectrometer_update_elements(&patch).await?;

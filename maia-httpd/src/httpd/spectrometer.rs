@@ -58,11 +58,17 @@ async fn update_spectrometer(state: &AppState, patch: &PatchSpectrometer) -> Res
         state.ip_core().lock().unwrap().set_spectrometer_mode(*mode);
     }
 
-    // tx_enable 필드가 있으면 새로 만든 set_tx_enable 함수를 호출합니다.
+    // tx_enable 필드가 있으면 새로 만든 set_tx_enable 함수를 호출.
     if let Some(enabled) = &patch.tx_enable {
         state.ip_core().lock().unwrap().set_tx_enable(*enabled);
     }
-
+    if let Some(distance_meters) = patch.distance_meters {
+        state.ip_core()
+             .lock()
+             .unwrap()
+             .set_distance_delay(distance_meters)
+             .map_err(JsonError::client_error_alert)?; // 또는 상황에 따라 server_error
+    }
     match patch {
         PatchSpectrometer {
             number_integrations: Some(n),
