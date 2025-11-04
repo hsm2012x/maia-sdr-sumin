@@ -1546,26 +1546,26 @@ module"]
         pub type R = crate::R<TxControlSpec>;
         #[doc = "Register `tx_control` writer"]
         pub type W = crate::W<TxControlSpec>;
-        #[doc = "Field `source_select` reader - source_select"]
+        #[doc = "Field `loopback` reader - loopback"]
         pub type SourceSelectR = crate::BitReader;
-        #[doc = "Field `source_select` writer - source_select"]
+        #[doc = "Field `loopback` writer - loopback"]
         pub type SourceSelectW<'a, REG> = crate::BitWriter<'a, REG>;
 
         #[doc = "Field `start_1sec_pulse` writer - start_1sec_pulse (Write-pulse)"]
         pub type Start1secPulseW<'a, REG> = crate::BitWriter<'a, REG>;
 
         impl R {
-            #[doc = "Bit 0 - source_select"]
+            #[doc = "Bit 0 - loopback"]
             #[inline(always)]
-            pub fn source_select(&self) -> SourceSelectR {
+            pub fn loopback(&self) -> SourceSelectR {
                 SourceSelectR::new((self.bits & 1) != 0)
             }
         }
         impl W {
-            #[doc = "Bit 0 - source_select"]
+            #[doc = "Bit 0 - loopback"]
             #[inline(always)]
             #[must_use]
-            pub fn source_select(&mut self) -> SourceSelectW<TxControlSpec> {
+            pub fn loopback(&mut self) -> SourceSelectW<TxControlSpec> {
                 SourceSelectW::new(self, 0)
             }
 

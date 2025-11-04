@@ -469,7 +469,7 @@ impl IpCore {
     pub fn set_tx_enable(&mut self, enabled: bool) {
         self.registers
             .tx_control()
-            .modify(|_, w| w.source_select().bit(enabled));
+            .modify(|_, w| w.loopback().bit(enabled));
     }
 
     /// Returns the new buffers that have been written by the spectrometer.

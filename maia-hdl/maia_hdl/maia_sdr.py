@@ -204,6 +204,12 @@ class MaiaSDR(Elaboratable):
                               1,
                               0),
                     ]),
+                0b110:Register('tx_control', [
+                            Field('loopback', Access.RW, 1, 0), # 0=loopback, 1=
+                            Field('start_1sec_pulse', Access.Wpulse, 1, 0),
+                            Field('delay_buffer', Access.RW, 8, 0 ),
+                ]),
+            
             }, 3)
         metadata = {
             'vendor': 'Daniel Estevez',
@@ -321,8 +327,7 @@ class MaiaSDR(Elaboratable):
         m.submodules.txiq_cdc = txiq_cdc = TxIQCDC(
             'sync', 'sampling', self.iq_out_width)
         m.d.comb += [
-            txiq_cdc.re_in.eq(bram_delay.out_data[:self.iq_out_width]),
-            txiq_cdc.im_in.eq(bram_delay.out_data[self.iq_out_width:]),
+
             txiq_cdc.valid_re.eq(self.valid_re),
             txiq_cdc.valid_im.eq(self.valid_im),
             bram_delay.read_en.eq(txiq_cdc.not_full & bram_delay_write_en),
@@ -330,6 +335,19 @@ class MaiaSDR(Elaboratable):
             self.re_out.eq(txiq_cdc.re_out),
             self.im_out.eq(txiq_cdc.im_out),
         ]
+
+        with m.If(self.sdr_registers['tx_control']['loopback'] == 0):
+            m.d.sync += [
+                txiq_cdc.re_in.eq(bram_delay.out_data[:self.iq_out_width]),
+                txiq_cdc.im_in.eq(bram_delay.out_data[self.iq_out_width:]),
+
+            ]
+        with m.Else():
+            m.d.sync += [
+                txiq_cdc.re_in.eq(0),
+                txiq_cdc.im_in.eq(0),
+            ]
+
         ###################################################################
 
         # Spectrometer (sync domain)
@@ -492,11 +510,9 @@ class MaiaSDR(Elaboratable):
                 init=1))
         m.d.comb += rxiq_cdc.reset.eq(
             self.control_registers['control']['sdr_reset'])
-        
-        ################## add loopback logic #############################
         m.d.comb += txiq_cdc.reset.eq(
             self.control_registers['control']['sdr_reset'])
-        ###################################################################
+        
 
         # Interrupts (s_axi_lite domain)
         interrupts_reg = self.control_registers['interrupts']

@@ -316,6 +316,32 @@
             </field>
           </fields>
         </register>
+          <register>
+          <name>tx_control</name>
+          <description>tx_control</description>
+          <addressOffset>0x38</addressOffset>
+          <access>read-write</access>
+          <fields>
+            <field>
+              <name>loopback</name>
+              <description>loopback</description>
+              <bitRange>[0:0]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>start_1sec_pulse</name>
+              <description>start_1sec_pulse</description>
+              <bitRange>[1:1]</bitRange>
+              <access>write-only</access>
+            </field>
+             <field>
+              <name>delay_buffer</name>
+              <description>delay_buffer</description>
+              <bitRange>[9:2]</bitRange>
+              <access>read-write</access>
+            </field>
+           </fields>
+        </register>
       </registers>
     </peripheral>
   </peripherals>
