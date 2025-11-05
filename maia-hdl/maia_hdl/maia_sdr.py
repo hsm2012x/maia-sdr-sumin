@@ -322,12 +322,22 @@ class MaiaSDR(Elaboratable):
             bram_delay.in_data.eq(Cat(bram_delay_re_in, bram_delay_im_in)),
             bram_delay.write_en.eq(bram_delay_write_en),
         ]
+        # 1. 'delay_buffer' 레지스터 원본 신호를 가져옵니다. (이것은 's_axi_lite' 도메인)
+        delay_buffer_ps = self.sdr_registers['tx_control']['delay_buffer']
 
+        # 2. 'sync' 도메인에서 동작할 2개의 동기화용 레지스터를 생성합니다.
+        #    초기값(1000)을 두 번째 레지스터에 설정합니다.
+        delay_buffer_sync_q1 = Signal(16, reset=1000) 
+        delay_buffer_sync_q2 = Signal(16, reset=1000)
+        m.d.sync += [
+            delay_buffer_sync_q1.eq(delay_buffer_ps),
+            delay_buffer_sync_q2.eq(delay_buffer_sync_q1),
+        ]
         # tx iq cdc block
         m.submodules.txiq_cdc = txiq_cdc = TxIQCDC(
             'sync', 'sampling', self.iq_out_width)
         m.d.comb += [
-            bram_delay.offset.eq(self.sdr_registers['tx_control']['delay_buffer']),
+            bram_delay.offset.eq(delay_buffer_sync_q2),
             txiq_cdc.valid_re.eq(self.valid_re),
             txiq_cdc.valid_im.eq(self.valid_im),
             bram_delay.read_en.eq(txiq_cdc.not_full & bram_delay_write_en),
