@@ -73,13 +73,13 @@ class BankedBRAM(Elaboratable):
         return m
     
 class BRAMDelay(Elaboratable):
-    def __init__(self, bank_bits, width):
+    def __init__(self, bank_bits, width, delay_width):
         # assert 0 < delay < (1 << bank_bits)*(2**9)
         self.row_bits   = 9
         self.bank_bits  = bank_bits
         self.addr_bits  = self.row_bits + self.bank_bits
         self.width = width
-        self.offset = Signal()
+        self.offset = Signal(delay_width)
 
         self.write_en   = Signal()
         self.in_data    = Signal(self.width)

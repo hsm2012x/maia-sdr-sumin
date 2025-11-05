@@ -813,13 +813,13 @@ impl IpCore {
         */
         // 4. 계산된 크기를 FPGA 레지스터에 씁니다.
         //    'tx_control' 레지스터 내부의 'delay_buffer' 필드를 사용합니다.
-        self.registers
-            .tx_control() // 'delay_control' -> 'tx_control'로 수정
-            .modify(|_, w| {
-                // 'delay_buffer' 필드는 16비트(u16) 값을 받습니다.
-                // 'bits()' 메소드를 사용하여 값을 씁니다.
-                unsafe { w.delay_buffer().bits(buffer_size) } // 'delay_buffer_size' -> 'delay_buffer'로 수정
-            });
+        // self.registers
+        //     .tx_control() // 'delay_control' -> 'tx_control'로 수정
+        //     .modify(|_, w| {
+        //         // 'delay_buffer' 필드는 16비트(u16) 값을 받습니다.
+        //         // 'bits()' 메소드를 사용하여 값을 씁니다.
+        //         unsafe { w.delay_buffer().bits(buffer_size) } // 'delay_buffer_size' -> 'delay_buffer'로 수정
+        //     });
 
         //tracing::info!(distance_meters, delay_s = delay_time_seconds, buffer_size, "complete set delay");
         Ok(())
