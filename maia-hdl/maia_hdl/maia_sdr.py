@@ -207,7 +207,7 @@ class MaiaSDR(Elaboratable):
                 0b110:Register('tx_control', [
                             Field('loopback', Access.RW, 1, 0), # 0=loopback, 1=
                             Field('start_1sec_pulse', Access.Wpulse, 1, 0),
-                            Field('delay_buffer', Access.RW, 16, 10000 ),
+                            Field('delay_buffer', Access.RW, 16, 1000 ),
                 ]),
             
             }, 3)
@@ -317,7 +317,7 @@ class MaiaSDR(Elaboratable):
 
         # delay block
         m.submodules.bram_delay = bram_delay = BRAMDelay(
-            bank_bits=5, width=32)
+            bank_bits=5, width=32, delay_width=16)
         m.d.comb += [
             bram_delay.in_data.eq(Cat(bram_delay_re_in, bram_delay_im_in)),
             bram_delay.write_en.eq(bram_delay_write_en),
@@ -337,7 +337,7 @@ class MaiaSDR(Elaboratable):
             self.im_out.eq(txiq_cdc.im_out),
         ]
 
-        with m.If(self.sdr_registers['tx_control']['loopback'] == 0):
+        with m.If(self.sdr_registers['tx_control']['loopback'] == 1):
             m.d.sync += [
                 txiq_cdc.re_in.eq(bram_delay.out_data[:self.iq_out_width]),
                 txiq_cdc.im_in.eq(bram_delay.out_data[self.iq_out_width:]),
