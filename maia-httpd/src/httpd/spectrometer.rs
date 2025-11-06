@@ -63,6 +63,12 @@ async fn update_spectrometer(state: &AppState, patch: &PatchSpectrometer) -> Res
         state.ip_core().lock().unwrap().set_tx_enable(*enabled);
     }
 
+    if let Some(distance) = &patch.distance_meters {
+        state.ip_core().lock().unwrap().set_distance_delay(*distance, ad9361_samp_rate).
+        map_err(JsonError::client_error_alert)?;
+    }
+
+
     match patch {
         PatchSpectrometer {
             number_integrations: Some(n),
