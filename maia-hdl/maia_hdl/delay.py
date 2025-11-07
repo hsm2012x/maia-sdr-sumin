@@ -74,7 +74,7 @@ class BankedBRAM(Elaboratable):
     
 class BRAMDelay(Elaboratable):
     def __init__(self, bank_bits, width, delay_width):
-        # assert 0 < delay < (1 << bank_bits)*(2**9)
+        #assert 0 < delay < (1 << bank_bits)*(2**9)
         self.row_bits   = 9
         self.bank_bits  = bank_bits
         self.addr_bits  = self.row_bits + self.bank_bits

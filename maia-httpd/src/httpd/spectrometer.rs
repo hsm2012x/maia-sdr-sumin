@@ -62,13 +62,13 @@ async fn update_spectrometer(state: &AppState, patch: &PatchSpectrometer) -> Res
     if let Some(enabled) = &patch.tx_enable {
         state.ip_core().lock().unwrap().set_tx_enable(*enabled);
     }
-    if let Some(distance_meters) = patch.distance_meters {
-        state.ip_core()
-             .lock()
-             .unwrap()
-             .set_distance_delay(distance_meters)
-             .map_err(JsonError::client_error_alert)?; // 또는 상황에 따라 server_error
+
+    if let Some(distance) = &patch.distance_meters {
+        state.ip_core().lock().unwrap().set_distance_delay(*distance, ad9361_samp_rate).
+        map_err(JsonError::client_error_alert)?;
     }
+
+
     match patch {
         PatchSpectrometer {
             number_integrations: Some(n),

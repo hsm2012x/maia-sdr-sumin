@@ -95,6 +95,7 @@ ui_elements! {
     ad9361_rx_gain_mode: HtmlSelectElement => EnumInput<maia_json::Ad9361GainMode>,
     ad9361_rx_gain: HtmlInputElement => NumberInput<f64>,
     ad9361_tx_enable: HtmlInputElement => CheckboxInput,
+    ad9361_distance_meter: HtmlInputElement => NumberInput<f64>,
     ad9361_tx_lo_frequency: HtmlInputElement => NumberInput<u64, input::MHzPresentation>,
     distance_meters: HtmlInputElement => NumberInput<f64>,
     ddc_frequency: HtmlInputElement => NumberInput<f64, input::KHzPresentation>,
@@ -203,12 +204,11 @@ impl Ui {
                 .into_js_value()
                 .unchecked_ref(),
         ));
-        // ===== distance_meters connect  =====
-        self.elements.distance_meters.set_onchange(Some(
-        self.distance_meters_onchange()
-            .into_js_value()
-            .unchecked_ref(),
+
+        self.elements.ad9361_distance_meter.set_onchange(Some(
+            self.distance_meters_onchange().into_js_value().unchecked_ref(),
         ));
+
         // This uses a custom onchange function that calls the macro-generated one.
         self.elements.ad9361_rx_gain.set_onchange(Some(
             self.ad9361_rx_gain_onchange_manual()
@@ -1050,30 +1050,27 @@ impl Ui {
             .into()
         })
     }
-
-    // tx_enable_onchange를 복사하여 수정
     fn distance_meters_onchange(&self) -> Closure<dyn Fn() -> JsValue> {
         let ui = self.clone();
         Closure::new(move || {
-            // 1. distance_meters 입력창에서 값을 가져옵니다.
-            let Some(distance) = ui.elements.distance_meters.get() else {
+            // 체크박스의 현재 상태 (true/false)를 가져옵니다.
+            let Some(enabled) = ui.elements.ad9361_distance_meter.get() else {
                 return JsValue::NULL;
             };
 
-            // 2. 환경설정에 값을 저장합니다 (경고 제거 및 상태 유지)
-            if let Ok(mut prefs) = ui.preferences.try_borrow_mut() {
-                if let Err(e) = prefs.update_distance_meters(&distance) {
-                    web_sys::console::error_1(&e);
-                }
-            }
+            // spectrometer 모드 드롭다운의 현재 선택된 값을 가져옵니다.
+            let Some(mode) = ui.elements.spectrometer_mode.get() else {
+                return JsValue::NULL;
+            };
 
-            // 3. 서버로 보낼 PATCH 데이터를 만듭니다.
+            // 서버로 보낼 PATCH 데이터를 만듭니다.
             let patch = maia_json::PatchSpectrometer {
-                distance_meters: Some(distance), // distance_meters 필드 사용
+                distance_meters: Some(enabled),
+                mode: Some(mode), // TX 비활성화 시 돌아갈 모드를 알려주기 위해 현재 모드도 함께 전송
                 ..Default::default()
             };
 
-            // 4. patch_spectrometer_update_elements 함수로 서버에 전송합니다.
+            // patch_spectrometer_update_elements 함수를 호출하여 서버로 PATCH 요청을 보냅니다.
             let ui = ui.clone();
             future_to_promise(async move {
                 ui.patch_spectrometer_update_elements(&patch).await?;
