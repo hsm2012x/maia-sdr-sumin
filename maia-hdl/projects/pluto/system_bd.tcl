@@ -201,9 +201,9 @@ ad_ip_parameter axi_ad9361 CONFIG.DAC_DDS_DISABLE 1
 if {![info exists maia_iio]} {
 	ad_ip_parameter axi_ad9361 CONFIG.ADC_USERPORTS_DISABLE 1
 	ad_ip_parameter axi_ad9361 CONFIG.ADC_DCFILTER_DISABLE 1
-	ad_ip_parameter axi_ad9361 CONFIG.ADC_IQCORRECTION_DISABLE 1
+	ad_ip_parameter axi_ad9361 CONFIG.ADC_IQCORRECTION_DISABLE 0
 	ad_ip_parameter axi_ad9361 CONFIG.DAC_USERPORTS_DISABLE 1
-	ad_ip_parameter axi_ad9361 CONFIG.DAC_IQCORRECTION_DISABLE 1
+	ad_ip_parameter axi_ad9361 CONFIG.DAC_IQCORRECTION_DISABLE 0
 }
 # Maia SDR core
 
