@@ -97,6 +97,7 @@ ui_elements! {
     ad9361_tx_enable: HtmlInputElement => CheckboxInput,
     ad9361_distance_meter: HtmlInputElement => NumberInput<f64>,
     ad9361_tx_lo_frequency: HtmlInputElement => NumberInput<u64, input::MHzPresentation>,
+    ad9361_tx_gain: HtmlInputElement => NumberInput<f64>,
     ddc_frequency: HtmlInputElement => NumberInput<f64, input::KHzPresentation>,
     ddc_decimation: HtmlInputElement => NumberInput<u32>,
     ddc_transition_bandwidth: HtmlInputElement => NumberInput<f64>,
@@ -185,6 +186,7 @@ impl Ui {
             ad9361_rx_rf_bandwidth,
             ad9361_rx_gain_mode,
             ad9361_tx_lo_frequency,
+            ad9361_tx_gain,
             ddc_frequency,
             spectrometer_input,
             spectrometer_output_sampling_frequency,
@@ -214,6 +216,11 @@ impl Ui {
                 .into_js_value()
                 .unchecked_ref(),
         ));
+        // self.elements.ad9361_tx_gain.set_onchange(Some(
+        //     self.ad9361_tx_gain_onchange_manual()
+        //         .into_js_value()
+        //         .unchecked_ref(),
+        // ));
 
         set_on!(
             click,
@@ -403,7 +410,8 @@ impl Ui {
         rx_rf_bandwidth,
         rx_gain,
         rx_gain_mode,
-        tx_lo_frequency
+        tx_lo_frequency,
+        tx_gain
     );
     impl_onchange_patch_modify_noop!(ad9361, maia_json::PatchAd9361);
 
@@ -454,6 +462,26 @@ impl Ui {
                 .unwrap()
         })
     }
+    //  fn ad9361_tx_gain_onchange_manual(&self) -> Closure<dyn Fn() -> JsValue> {
+    //     let closure = self.ad9361_tx_gain_onchange();
+    //     let ui = self.clone();
+    //     Closure::new(move || {
+    //         let state = ui.api_state.borrow();
+    //         let Some(state) = state.as_ref() else {
+    //             return JsValue::NULL;
+    //         };
+    //         if !matches!(state.ad9361.tx_gain_mode, maia_json::Ad9361GainMode::Manual) {
+    //             return JsValue::NULL;
+    //         }
+    //         // Run macro-generated closure to parse the entry value and make a FETCH request
+    //         closure
+    //             .as_ref()
+    //             .unchecked_ref::<js_sys::Function>()
+    //             .call0(&JsValue::NULL)
+    //             .unwrap()
+    //     })
+    // }
+
 }
 
 // DDC methods
