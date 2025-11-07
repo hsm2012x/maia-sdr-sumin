@@ -334,23 +334,21 @@ class MaiaSDR(Elaboratable):
             txiq_cdc.valid_im.eq(self.valid_im),
             bram_delay.read_en.eq(txiq_cdc.not_full & bram_delay_write_en),
             txiq_cdc.write_en.eq(txiq_cdc.not_full & bram_delay_write_en),
-            txiq_cdc.re_in.eq(bram_delay.out_data[:self.iq_out_width]),
-            txiq_cdc.im_in.eq(bram_delay.out_data[self.iq_out_width:]),
+
             self.re_out.eq(txiq_cdc.re_out),
             self.im_out.eq(txiq_cdc.im_out),
         ]
 
-        # with m.If(self.sdr_registers['tx_control']['loopback'] == 1):
-        #     m.d.sync += [
-                
-                
-
-        #     ]
-        # with m.Else():
-        #     m.d.sync += [
-        #         txiq_cdc.re_in.eq(0),
-        #         txiq_cdc.im_in.eq(0),
-        #     ]
+        with m.If(self.sdr_registers['tx_control']['loopback'] == 1):
+            m.d.comb += [
+                txiq_cdc.re_in.eq(bram_delay.out_data[:self.iq_out_width]),
+                txiq_cdc.im_in.eq(bram_delay.out_data[self.iq_out_width:]),
+            ]
+        with m.Else():
+            m.d.comb += [
+                txiq_cdc.re_in.eq(0),
+                txiq_cdc.im_in.eq(0),
+            ]
 
         ###################################################################
 
