@@ -8,7 +8,7 @@ use crate::uio::{Mapping, Uio};
 use anyhow::{Context, Result};
 use std::sync::Arc;
 use tokio::sync::Notify;
-
+const SPEED_OF_LIGHT: f64 = 299_792_458.0; // 미터/초
 /// Maia SDR FPGA IP core.
 ///
 /// This struct represents the FPGA IP core and gives access to its registers
@@ -314,7 +314,7 @@ impl IpCore {
     fn set_sdr_reset(&self, value: bool) {
         self.registers
             .control()
-            .modify(|_, w| w.sdr_reset().bit(value))
+            .modify(|_, w| w.sdr_reset().bit(value));
     }
 
     async fn log_open(&self) -> Result<()> {
@@ -460,18 +460,53 @@ impl IpCore {
         self.registers
             .spectrometer()
             .modify(|_, w| w.peak_detect().bit(peak_detect));
-
-        
-
         self.spectrometer_mode = mode;
     }
-    // Set tx_enable
+    /// Set tx_enable
     pub fn set_tx_enable(&mut self, enabled: bool) {
         self.registers
             .tx_control()
-            .modify(|_, w| w.source_select().bit(enabled));
+            .modify(|_, w| w.loopback().bit(enabled));
     }
+    // Calculate the distance between read_point and write_point
+    pub fn set_distance_delay(&mut self, distance_meters: f64, sampling_frequency: f64) -> Result<()> {
+        if distance_meters < 0.0 {
+            anyhow::bail!("Distance cannot be negative");
+        }
 
+        // 1. 필요한 지연 시간 계산
+        let delay_time_seconds = distance_meters / SPEED_OF_LIGHT;
+
+        // 2. 이 지연에 필요한 *샘플* 수 계산
+        //    (DDC 클럭이 아닌 샘플링 주파수 기준)
+        let required_samples = delay_time_seconds * sampling_frequency;
+
+        // 3. 샘플 수를 버퍼 크기로 변환
+        let required_samples_rounded = required_samples.round();
+
+        // 16비트 오버플로우 체크 (u16::MAX는 65535)
+        if required_samples_rounded > f64::from(u16::MAX) || required_samples_rounded < 0.0 {
+            anyhow::bail!(
+                "계산된 샘플 수 ({})가 16비트 버퍼 크기(0-65535)를 초과합니다",
+                required_samples_rounded
+            );
+        }
+        let buffer_size = required_samples_rounded as u16; // u16으로 수정
+        //let buffer_size = 1000 as u16; // u16으로 수정
+
+        // 4. 계산된 크기를 FPGA 레지스터에 씁니다.
+        //    'tx_control' 레지스터 내부의 'delay_buffer' 필드를 사용합니다.
+        self.registers
+            .tx_control() // 'delay_control' -> 'tx_control'로 수정
+            .modify(|_, w| {
+                
+                
+                unsafe { w.delay_buffer().bits(buffer_size) } // 'delay_buffer_size' -> 'delay_buffer'로 수정
+            });
+
+        tracing::info!(distance_meters, delay_s = delay_time_seconds, buffer_size, "Comlete delay update");
+        Ok(())
+    }
     /// Returns the new buffers that have been written by the spectrometer.
     ///
     /// This function returns an iterator that iterates over the buffers to
@@ -782,6 +817,8 @@ impl IpCore {
     pub fn recorder_next_address(&self) -> usize {
         usize::try_from(self.registers.recorder_next_address().read().bits()).unwrap()
     }
+
+    
 }
 
 macro_rules! impl_interrupt_handler {
