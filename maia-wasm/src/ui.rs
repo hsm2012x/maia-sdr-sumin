@@ -97,7 +97,6 @@ ui_elements! {
     ad9361_tx_enable: HtmlInputElement => CheckboxInput,
     ad9361_distance_meter: HtmlInputElement => NumberInput<f64>,
     ad9361_tx_lo_frequency: HtmlInputElement => NumberInput<u64, input::MHzPresentation>,
-    distance_meters: HtmlInputElement => NumberInput<f64>,
     ddc_frequency: HtmlInputElement => NumberInput<f64, input::KHzPresentation>,
     ddc_decimation: HtmlInputElement => NumberInput<u32>,
     ddc_transition_bandwidth: HtmlInputElement => NumberInput<f64>,

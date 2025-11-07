@@ -5,7 +5,6 @@
 
 use crate::rxbuffer::RxBuffer;
 use crate::uio::{Mapping, Uio};
-use crate::ddc::constants::CLOCK_FREQUENCY;
 use anyhow::{Context, Result};
 use std::sync::Arc;
 use tokio::sync::Notify;
@@ -469,7 +468,7 @@ impl IpCore {
             .tx_control()
             .modify(|_, w| w.loopback().bit(enabled));
     }
-
+    // Calculate the distance between read_point and write_point
     pub fn set_distance_delay(&mut self, distance_meters: f64, sampling_frequency: f64) -> Result<()> {
         if distance_meters < 0.0 {
             anyhow::bail!("Distance cannot be negative");
@@ -500,8 +499,8 @@ impl IpCore {
         self.registers
             .tx_control() // 'delay_control' -> 'tx_control'로 수정
             .modify(|_, w| {
-                // 'delay_buffer' 필드는 16비트(u16) 값을 받습니다.
-                // 'bits()' 메소드를 사용하여 값을 씁니다.
+                
+                
                 unsafe { w.delay_buffer().bits(buffer_size) } // 'delay_buffer_size' -> 'delay_buffer'로 수정
             });
 
@@ -818,48 +817,8 @@ impl IpCore {
     pub fn recorder_next_address(&self) -> usize {
         usize::try_from(self.registers.recorder_next_address().read().bits()).unwrap()
     }
-    /// Calculate the value of the numbers of delay counter.
-    ///
-    /// delay_buffer indicates the physical address to which wptr & rptr...
-    pub fn set_distance_delay(&mut self, distance_meters: f64) -> Result<()> {
-        /*if distance_meters < 0.0 {
-            anyhow::bail!("거리는 음수가 될 수 없습니다");
-        }
-        */
-        let buffer_size: u16 = 10000; // 테스트를 위한 고정값
-        /*
-        // 1. 필요한 지연 시간 계산
-        let delay_time_seconds = distance_meters / SPEED_OF_LIGHT;
 
-        // 2. 이 지연에 필요한 클럭 사이클 수 계산
-        let required_cycles = delay_time_seconds * CLOCK_FREQUENCY;
-
-        // 3. 사이클 수를 버퍼 크기로 변환
-        //    lib.rs에 따르면 'delay_buffer'는 16비트 (u16)입니다.
-        let required_cycles_rounded = required_cycles.round();
-
-        // 16비트 오버플로우 체크 (u16::MAX는 65535)
-        if required_cycles_rounded > f64::from(u16::MAX) || required_cycles_rounded < 0.0 {
-            anyhow::bail!(
-                "계산된 사이클 수 ({})가 16비트 버퍼 크기(0-65535)를 초과합니다",
-                required_cycles_rounded
-            );
-        }
-        let buffer_size = required_cycles_rounded as u16; // u16으로 수정
-        */
-        // 4. 계산된 크기를 FPGA 레지스터에 씁니다.
-        //    'tx_control' 레지스터 내부의 'delay_buffer' 필드를 사용합니다.
-        // self.registers
-        //     .tx_control() // 'delay_control' -> 'tx_control'로 수정
-        //     .modify(|_, w| {
-        //         // 'delay_buffer' 필드는 16비트(u16) 값을 받습니다.
-        //         // 'bits()' 메소드를 사용하여 값을 씁니다.
-        //         unsafe { w.delay_buffer().bits(buffer_size) } // 'delay_buffer_size' -> 'delay_buffer'로 수정
-        //     });
-
-        //tracing::info!(distance_meters, delay_s = delay_time_seconds, buffer_size, "complete set delay");
-        Ok(())
-    }
+    
 }
 
 macro_rules! impl_interrupt_handler {
