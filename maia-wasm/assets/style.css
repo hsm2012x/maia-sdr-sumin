@@ -242,10 +242,7 @@ form.ui {
     row-gap: 10px;
     padding: 10px;
 }
-#kmu_app_logo {
-  height: 32px; /* 로고의 높이를 적절하게 조절 (예: 32px) */
-  width: auto;  /* 높이에 맞춰 너비는 자동 조절 */
-}
+
 .ui fieldset {
     border: none;
     padding: 0;
@@ -270,7 +267,9 @@ label:has(#ad9361_tx_enable) {
   /* flex 아이템이 한 줄을 모두 차지하도록 설정 */
   flex-basis: 100%; 
   /* 내부 로고를 왼쪽 정렬 */
-  text-align: left; 
+  display: flex;          /* 추가 */
+  justify-content: center;/* 추가: 가로 중앙 */
+  align-items: center;    /* 선택: 세로 중앙 */
   /* 다른 UI 요소와의 세로 간격 */
   margin-bottom: 10px; 
 }
