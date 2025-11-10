@@ -26,6 +26,8 @@ pub struct Api {
     pub time: Time,
     /// Versions information.
     pub versions: Versions,
+    #[serde(default)] // 기존 WASM 호환성을 위해 default 처리
+    pub target: Target,
 }
 
 /// AD9361 JSON schema.
@@ -51,7 +53,20 @@ pub struct Ad9361 {
     /// Transmit gain in dB.
     pub tx_gain: f64,
 }
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct Target {
+    /// 상대 속도 (m/s). +: 멀어짐, -: 가까워짐
+    pub velocity: f64,
+    /// 도플러 효과가 적용된 권장 TX 주파수 (Hz)
+    pub recommended_tx_frequency: u64,
+}
 
+// [신규 추가] PatchTarget 구조체 (PATCH 요청용)
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct PatchTarget {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub velocity: Option<f64>,
+}
 /// AD9361 PATCH JSON schema.
 ///
 /// This JSON schema corresponds to PATCH requests on `/api/ad9361`. It contains

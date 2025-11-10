@@ -29,7 +29,7 @@ mod time;
 mod version;
 mod websocket;
 mod zeros;
-
+mod target;
 pub use recording::{RecorderFinishWaiter, RecorderState};
 
 /// HTTP server.
@@ -81,6 +81,7 @@ impl Server {
                 "/api/spectrometer",
                 get(spectrometer::get_spectrometer).patch(spectrometer::patch_spectrometer),
             )
+            .route("/api/target", get(target::get_target).patch(target::patch_target))
             .route(
                 "/api/ddc/config",
                 get(ddc::get_ddc_config)

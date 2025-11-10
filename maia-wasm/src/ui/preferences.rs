@@ -92,6 +92,7 @@ impl_preference_data! {
     recorder_mode: maia_json::RecorderMode = maia_json::RecorderMode::IQ12bit,
     recorder_maximum_duration: f64 = 0.0,
     geolocation_watch: bool = false,
+    target_velocity: f64 = 0.0,
 }
 
 impl Preferences {

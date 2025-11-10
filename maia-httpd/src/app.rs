@@ -46,6 +46,7 @@ impl App {
             geolocation: std::sync::Mutex::new(None),
             recorder,
             spectrometer_config: Default::default(),
+            target_velocity: std::sync::Mutex::new(0.0),
         }));
         // Initialize spectrometer sample rate and mode
         state.spectrometer_config().set_samp_rate_mode(
@@ -117,6 +118,7 @@ struct State {
     geolocation: Mutex<Option<maia_json::Geolocation>>,
     recorder: RecorderState,
     spectrometer_config: SpectrometerConfig,
+    target_velocity: Mutex<f64>,
 }
 
 impl AppState {
@@ -154,5 +156,9 @@ impl AppState {
     /// Returns the AD9361 sampling frequency.
     pub async fn ad9361_samp_rate(&self) -> Result<f64> {
         Ok(self.ad9361().lock().await.get_sampling_frequency().await? as f64)
+    }
+
+    pub fn target_velocity(&self) -> &Mutex<f64> {
+        &self.0.target_velocity
     }
 }

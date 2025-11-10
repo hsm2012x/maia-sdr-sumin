@@ -41,7 +41,7 @@ const RECORDER_URL: &str = "/api/recorder";
 const RECORDING_METADATA_URL: &str = "/api/recording/metadata";
 const SPECTROMETER_URL: &str = "/api/spectrometer";
 const TIME_URL: &str = "/api/time";
-
+const TARGET_URL: &str = "/api/target";
 /// User interface.
 ///
 /// This structure is used to create and set up the appropriate callbacks that
@@ -98,6 +98,9 @@ ui_elements! {
     ad9361_distance_meter: HtmlInputElement => NumberInput<f64>,
     ad9361_tx_lo_frequency: HtmlInputElement => NumberInput<u64, input::MHzPresentation>,
     ad9361_tx_gain: HtmlInputElement => NumberInput<f64>,
+    target_velocity: HtmlInputElement => NumberInput<f64>,
+    target_recommended_tx_frequency: HtmlInputElement 
+        => NumberInput<u64, input::IntegerPresentation>,
     ddc_frequency: HtmlInputElement => NumberInput<f64, input::KHzPresentation>,
     ddc_decimation: HtmlInputElement => NumberInput<u32>,
     ddc_transition_bandwidth: HtmlInputElement => NumberInput<f64>,
@@ -197,7 +200,8 @@ impl Ui {
             recording_metadata_author,
             recorder_mode,
             recorder_maximum_duration,
-            geolocation_watch
+            geolocation_watch,
+            target_velocity
         );
         // ===== tx_enable connect =====
         self.elements.ad9361_tx_enable.set_onchange(Some(
@@ -342,7 +346,7 @@ impl Ui {
         self.update_recorder_inactive_elements(&json.recorder)?;
         self.update_geolocation_elements(&json.geolocation)?;
         self.update_versions_elements(&json.versions);
-
+        self.update_target_inactive_elements(&json.target)?;
         // This potentially takes some time to complete, since it might have to
         // do a fetch call to PATCH the server time. We do this last.
         self.update_server_time(&json.time).await?;
@@ -999,7 +1003,26 @@ impl Ui {
         })
     }
 }
-
+impl Ui {
+    // velocity 필드만 매크로를 통해 자동 연결 (PATCH 지원)
+    impl_section_custom!(
+        target,
+        maia_json::Target,
+        maia_json::PatchTarget,
+        TARGET_URL,
+        velocity
+    );
+    // velocity 변경 시 특별한 추가 동작은 없으므로 noop 사용
+    impl_onchange_patch_modify_noop!(target, maia_json::PatchTarget);
+    impl_post_patch_update_elements_noop!(target, maia_json::PatchTarget);
+    // 매크로가 처리하지 못하는 읽기 전용 필드(권장 주파수)를 수동으로 업데이트
+    fn post_update_target_elements(&self, json: &maia_json::Target) -> Result<(), JsValue> {
+        self.elements
+            .target_recommended_tx_frequency
+            .set(&json.recommended_tx_frequency);
+        Ok(())
+    }
+}
 // Spectrometer methods
 impl Ui {
     impl_section_custom!(
