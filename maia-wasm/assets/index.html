@@ -131,7 +131,7 @@
 
       <form class="ui">
         <div class="logo-container">
-          <img id="kmu_app_logo" src="/maia-icon-192x192.png" alt="Sumin SDR Logo">
+          <img id="kmu_app_logo" src="/kmu_logo.png" alt="Sumin SDR Logo">
         </div>
         <fieldset class="waterfall_levels">
           <label for="waterfall_min">Waterfall min</label>/<label for="waterfall_max">max</label>
@@ -144,8 +144,8 @@
         </label>
         <label>TX freq
         <input type="checkbox" id="ad9361_tx_enable">
-          <input type="number" class="rf_frequency" id="ad9361_tx_lo_frequency" step="0.001" min="70" max="6000">
-          MHz
+          <input type="number" class="rf_frequency" id="ad9361_tx_lo_frequency" min="70000000" max="6000000000">
+          Hz
         </label>
         <label>TX gain
           <input type="number" class="rf_frequency" id="ad9361_tx_gain" step="0.25" min="-89.75" max="0">

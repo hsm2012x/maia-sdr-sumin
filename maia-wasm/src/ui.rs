@@ -96,7 +96,7 @@ ui_elements! {
     ad9361_rx_gain: HtmlInputElement => NumberInput<f64>,
     ad9361_tx_enable: HtmlInputElement => CheckboxInput,
     ad9361_distance_meter: HtmlInputElement => NumberInput<f64>,
-    ad9361_tx_lo_frequency: HtmlInputElement => NumberInput<u64, input::MHzPresentation>,
+    ad9361_tx_lo_frequency: HtmlInputElement => NumberInput<u64, input::IntegerPresentation>,
     ad9361_tx_gain: HtmlInputElement => NumberInput<f64>,
     target_velocity: HtmlInputElement => NumberInput<f64>,
     target_recommended_tx_frequency: HtmlInputElement 

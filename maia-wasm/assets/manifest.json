@@ -21,6 +21,11 @@
             "src:": "/maia-icon-192x192.png",
             "type": "image/png",
             "sizes": "192x192"
+        },
+        {
+            "src:": "/kmu_logo.png",
+            "type": "image/png",
+            "sizes": "1892x175"
         }
     ],
     "start_url": "./index.html",
