@@ -339,14 +339,14 @@ class MaiaSDR(Elaboratable):
         ]
 
         with m.If(self.sdr_registers['tx_control']['loopback'] == 1):
-            m.d.sync += [
+            m.d.comb += [
                 
                 txiq_cdc.re_in.eq(bram_delay.out_data[:self.iq_out_width]),
                 txiq_cdc.im_in.eq(bram_delay.out_data[self.iq_out_width:]),
 
             ]
         with m.Else():
-            m.d.sync += [
+            m.d.comb += [
                 txiq_cdc.re_in.eq(0),
                 txiq_cdc.im_in.eq(0),
             ]
